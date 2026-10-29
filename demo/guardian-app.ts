@@ -139,6 +139,17 @@ const QR_STYLE = `<style>
 @keyframes gq-out{to{opacity:0}}
 @keyframes gq-show{from{opacity:0;visibility:hidden}to{opacity:1;visibility:visible}}
 @keyframes gq-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.gq-vf.cam{background:#000}
+.gq-vf.cam::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% + .5px),transparent calc(66.66% + .5px)),linear-gradient(transparent calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
+.gq-vf.cam{flex:1;height:auto}
+.gq-vf.cam .gq-br{width:190px;height:240px}
+.gq-vf.now .gq-board{animation:none!important}
+.gq-vf.now .gq-float{animation-play-state:paused}
+.gq-vf.now .gq-br{animation-delay:0s}
+.gq-vf.now .gq-br i{animation-delay:0s}
+.gq-vf.now .gq-cap{animation-delay:0s}
+.gq-vf.now .gq-chip{animation-delay:.1s,.8s}
+.gq-vf.now .gq-chip .a,.gq-vf.now .gq-chip .b{animation-delay:.8s}
 @media (prefers-reduced-motion:reduce){.gq-float{animation:none}.gq-board,.gq-chip,.gq-vf.live .gq-br,.gq-vf.live .gq-br i,.gq-cap,.gq-cover,.gq-sheet,.gq-chip .a,.gq-chip .b{animation-duration:.01s!important}}
 </style>`;
 
@@ -180,8 +191,9 @@ export function createGuardianApp(opts: {
   /**
    * QR 찍기 화면(비추기 → 인식 → 판독). withSheet이면 3초 뒤 결과 창까지 띄우고(앱 안 QR 검사),
    * 아니면 아래 주소 표시의 색으로만 알린다(휴대폰 카메라 앱).
+   * camera이면 검은 화면+격자 모양이고, 셔터를 누른 순간 바로 인식·판독한다.
    */
-  function qrScanView(r: Rec, idx: number, withSheet: boolean) {
+  function qrScanView(r: Rec, idx: number, withSheet: boolean, camera = false) {
     const q = DEMO_QR_CODES[idx];
     const lv = r.result.riskLevel;
     const t = RISK_TONE[lv];
@@ -194,7 +206,7 @@ export function createGuardianApp(opts: {
           <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button><button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
         </div></div>`
       : '';
-    return `${QR_STYLE}<div class="gq-vf live" style="--risk:${t.solid};--risk-ink:${t.ink}">
+    return `${QR_STYLE}<div class="gq-vf live${camera ? ' cam now' : ''}" style="--risk:${t.solid};--risk-ink:${t.ink}">
         <span class="gq-cap">QR 코드를 화면 가운데에 비추세요</span>
         <div class="gq-float"><div class="gq-board"><p>${esc(q.place)}</p><b>${esc(q.title)}</b>${demoQrSvg(q.content)}</div></div>
         <span class="gq-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
@@ -317,14 +329,24 @@ export function createGuardianApp(opts: {
 
   return {
     app,
-    /** 휴대폰 카메라 앱의 QR 모드에서 비출 수 있는 체험용 QR */
-    qrTargets: DEMO_QR_CODES.map((q) => ({ label: q.title, place: q.place })),
-    /** 휴대폰 카메라로 QR을 비추면 판독해 기록에 넣고, 카메라 화면(색 표시만, 결과 창 없음)을 돌려준다. */
+    /** 휴대폰 카메라에 무작위로 비출 수 있는 체험용 QR 수 */
+    qrCount: DEMO_QR_CODES.length,
+    /** 카메라에 QR이 비춰진 화면(아직 판독 전, 검은 화면+격자) */
+    qrPreview(index: number) {
+      const q = DEMO_QR_CODES[index];
+      if (!q) return '';
+      return `${QR_STYLE}<div class="gq-vf cam">
+        <span class="gq-hint">셔터를 누르면 QR을 판독해요</span>
+        <div class="gq-float"><div class="gq-board"><p>${esc(q.place)}</p><b>${esc(q.title)}</b>${demoQrSvg(q.content)}</div></div>
+        <span class="gq-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      </div>`;
+    },
+    /** 셔터를 누르면 판독해 기록에 넣고, 판독 화면(색 표시만, 결과 창 없음)을 돌려준다. */
     scanQr(index: number) {
       const q = DEMO_QR_CODES[index];
       if (!q) return '';
       const r = add('카메라 QR', q.content, opts.analyzeQr(q.content));
-      return qrScanView(r, index, false);
+      return qrScanView(r, index, false, true);
     },
     /** 휴대폰에 문자가 도착했을 때 실시간 감지 기록에 넣는다. */
     record(source: string, text: string, result: Analysis) {

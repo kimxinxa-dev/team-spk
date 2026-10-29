@@ -430,10 +430,6 @@ const CSS = `
 .vp-zoom span.on{background:rgba(255,255,255,.3);color:#fcd34d;font-size:12.5px}
 .vp-modes{flex:none;display:flex;justify-content:center;gap:18px;padding:6px 0;background:#000;color:#9ca3af;font-size:.85em;font-weight:700}
 .vp-modes .on{color:#fcd34d}
-.vp-qrpick{flex:none;display:flex;gap:8px;align-items:center;overflow-x:auto;padding:8px 12px;background:#000}
-.vp-qrlab{flex:none;color:#fcd34d;font-size:.75em;font-weight:800}
-.vp-qrpick button{flex:none;border:0;border-radius:14px;background:#27272a;color:#fff;font:inherit;font-size:.8em;font-weight:700;padding:8px 12px;display:grid;gap:1px;text-align:left;cursor:pointer}
-.vp-qrpick small{color:#a1a1aa;font-weight:500;font-size:.85em}
 .vp-camc{flex:none;height:100px;background:#000;display:flex;align-items:center;justify-content:space-around}
 .vp-shut{width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:#fff;box-shadow:inset 0 0 0 3px #000;cursor:pointer}
 .vp-shut:active{transform:scale(.94)}
@@ -571,7 +567,11 @@ const BATTERY =
 
 /** 휴대폰 카메라 앱의 QR 모드에 넣는 기능(시뮬레이션의 안심 지킴이가 판독을 맡는다) */
 export type CameraQr = {
-  targets: { label: string; place: string }[];
+  /** 무작위로 비출 수 있는 QR 수 */
+  count: number;
+  /** QR이 비춰진(판독 전) 화면 */
+  preview(index: number): string;
+  /** 셔터를 눌러 판독한 화면 */
   scan(index: number): string;
 };
 
@@ -608,8 +608,8 @@ export class VirtualPhone {
   private drafts: Record<string, string> = {};
   private clipboard = '';
   private qr: CameraQr | null = null;
-  /** 카메라로 지금 비추고 있는 QR의 판독 화면 HTML(없으면 보통 카메라 화면) */
-  private camQr: string | null = null;
+  /** 카메라에 비춰진 QR(무작위), 판독했는지, 그 화면(판독은 셔터를 누를 때 한 번만) */
+  private camQr: { index: number; judged: boolean; html: string } | null = null;
 
   constructor(
     root: HTMLElement,
@@ -676,8 +676,17 @@ export class VirtualPhone {
     return this.stack[this.stack.length - 1];
   }
 
+  /** 카메라에 다음 체험용 QR을 무작위로 비춘다(바로 전 QR과 다르게). */
+  private aimQr() {
+    if (!this.qr || this.qr.count === 0) return;
+    let index = Math.floor(Math.random() * this.qr.count);
+    if (this.qr.count > 1 && index === this.camQr?.index)
+      index = (index + 1) % this.qr.count;
+    this.camQr = { index, judged: false, html: this.qr.preview(index) };
+  }
+
   private push(s: Screen) {
-    if (s.id === 'camera') this.camQr = null;
+    if (s.id === 'camera') this.aimQr();
     this.stack.push(s);
   }
 
@@ -797,14 +806,18 @@ export class VirtualPhone {
         const line = this.sms.find((l) => l.text.includes(arg));
         return this.openLink(arg, line?.text ?? '');
       }
-      case 'cam-qr':
-        if (this.qr) this.camQr = this.qr.scan(Number(arg));
-        return;
-      case 'cam-qr-off':
-        this.camQr = null;
-        return;
       case 'shutter':
-        this.camQr = null;
+        // QR이 비춰져 있으면 셔터가 판독, 판독한 뒤에 누르면 다음 QR을 비춘다.
+        if (this.qr && this.camQr) {
+          if (this.camQr.judged) this.aimQr();
+          else
+            this.camQr = {
+              ...this.camQr,
+              judged: true,
+              html: this.qr.scan(this.camQr.index),
+            };
+          return;
+        }
         this.photos.unshift(['🌳', '🏠', '🌼', '🐱'][this.photos.length % 4]);
         this.flash = true;
         setTimeout(() => {
@@ -1091,20 +1104,21 @@ export class VirtualPhone {
             <div class="vp-input"><button class="plus" data-act="send-text" aria-label="더하기">${PHONE_ICONS.plus}</button><span class="fld">메시지 입력${PHONE_ICONS.smile}</span><button class="snd" style="background:#2563eb;color:#fff" data-act="send-text" aria-label="보내기">${PHONE_ICONS.send}</button></div>`,
         };
       }
-      case 'camera':
+      case 'camera': {
+        const qr = this.qr && this.camQr ? this.camQr : null;
+        const view = qr
+          ? qr.html
+          : `<div class="vp-camv"><span class="grid"></span>🌳${this.flash ? '<span class="vp-flash"></span>' : ''}</div>`;
         return {
           dark: true,
-          html: `<div class="vp-camtop">${PHONE_ICONS.flash}${PHONE_ICONS.settings}</div>${this.camQr ?? `<div class="vp-camv"><span class="grid"></span>🌳${this.flash ? '<span class="vp-flash"></span>' : ''}</div>`}
-            ${
-              this.qr
-                ? `<div class="vp-qrpick" aria-label="비출 QR 고르기"><span class="vp-qrlab">QR 비추기</span>${this.qr.targets.map((t, i) => `<button data-act="cam-qr" data-arg="${i}"><small>${esc(t.place)}</small>${esc(t.label)}</button>`).join('')}${this.camQr ? '<button data-act="cam-qr-off">✕ 그만 비추기</button>' : ''}</div>`
-                : '<div class="vp-zoom"><span>.5</span><span class="on">1×</span><span>2</span></div>'
-            }
+          html: `<div class="vp-camtop">${PHONE_ICONS.flash}${PHONE_ICONS.settings}</div>${view}
+            <div class="vp-zoom"><span>.5</span><span class="on">1×</span><span>2</span></div>
             <div class="vp-modes"><span>동영상</span><span class="on">사진</span><span>인물</span></div>
             <div class="vp-camc"><button class="vp-thumb" data-act="go" data-arg="gallery" aria-label="갤러리" style="background:${PHOTO_BG[0]}">${this.photos[0] ?? ''}</button>
-            <button class="vp-shut" data-act="shutter" ${this.g('camera:shutter')} aria-label="찍기"></button>
+            <button class="vp-shut" data-act="shutter" ${this.g('camera:shutter')} aria-label="${qr ? (qr.judged ? '다음 QR 비추기' : '찍어서 QR 판독하기') : '찍기'}"></button>
             <button class="vp-flip" data-act="send-text" aria-label="화면 전환">${PHONE_ICONS.flip}</button></div>`,
         };
+      }
       case 'gallery':
         return {
           html: `${this.bar('갤러리', ['search', 'more'])}<div class="vp-tabs"><span class="on">사진</span><span>앨범</span><span>스토리</span></div><div class="vp-sub">오늘</div><div class="vp-pics">${this.photos

@@ -165,7 +165,11 @@
   });
   const phone = new Sim.VirtualPhone(document.getElementById('phone'), {
     apps: [guardian.app],
-    qr: { targets: guardian.qrTargets, scan: (i) => guardian.scanQr(i) },
+    qr: {
+      count: guardian.qrCount,
+      preview: (i) => guardian.qrPreview(i),
+      scan: (i) => guardian.scanQr(i),
+    },
     analyze: (t) => Sim.analyzeScan('MESSAGE', t, guardian.personal()),
     onEvent: (e) => {
       if (e.type === 'message-checked')
