@@ -21,9 +21,18 @@ const html = readFileSync(new URL('template.html', dir), 'utf8').replace(
   '/*SIM*/',
   () => sim,
 );
+// 브라우저에서 바로 열 파일이므로 문서 머리(글자 인코딩, 휴대폰 화면 폭)를 붙인다.
+// 이것이 없으면 휴대폰 브라우저가 PC 폭으로 그려 화면이 잘리거나 작아진다.
+const page = `<!doctype html>
+<html lang="ko">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+${html}
+</html>
+`;
 mkdirSync(new URL('dist/', dir), { recursive: true });
-writeFileSync(new URL('dist/simulation.html', dir), html);
-writeFileSync(new URL('../public/simulation.html', dir), html);
+writeFileSync(new URL('dist/simulation.html', dir), page);
+writeFileSync(new URL('../public/simulation.html', dir), page);
 console.log(
   'demo/dist/simulation.html 과 public/simulation.html 을 만들었어요.',
 );
