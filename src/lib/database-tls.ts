@@ -40,7 +40,9 @@ export function createDatabaseConnectionConfig(
       minVersion: 'TLSv1.2',
     },
     max: 2,
-    connectionTimeoutMillis: 5_000,
+    // DB와 멀리 떨어진 곳(예: 한국 PC ↔ 유럽 DB)에서는 TLS 연결에 5초 이상 걸릴 때가 있어 여유를 둔다.
+    // 무한 대기는 막기 위해 제한 시간은 유지한다.
+    connectionTimeoutMillis: 15_000,
     idleTimeoutMillis: 10_000,
   };
 }
