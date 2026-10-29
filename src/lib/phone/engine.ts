@@ -1334,7 +1334,7 @@ export class VirtualPhone {
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
         <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>이렇게 판단했어요</b>${reasonList(ov.result.reasons)}</div>
         <div class="tip">링크를 누르지 마세요. 돈·인증번호를 요구하면 가족에게 먼저 물어보세요.</div>
-        <div class="btns"><button data-act="ov-view">문자 보기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
+        <div class="btns"><button data-act="ov-view">문자 보기</button><button class="main" data-act="ov-close">확인했어요</button></div></div></div>`;
     }
     if (ov.kind === 'qr-warn') {
       const t = RISK_TEXT[ov.result.riskLevel];
@@ -1344,7 +1344,7 @@ export class VirtualPhone {
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
         <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>${ov.result.riskLevel === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(hostOf(ov.content))}</span>${reasonList(ov.result.reasons)}</div>
         <div class="tip">${esc(ov.place)}에 붙어 있던 QR이에요.</div>
-        <div class="btns"><button data-act="${ov.result.riskLevel === 'CAUTION' ? 'qr-ask' : 'qr-open'}" data-arg="${esc(ov.content)}">링크 열기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
+        <div class="btns"><button data-act="${ov.result.riskLevel === 'CAUTION' ? 'qr-ask' : 'qr-open'}" data-arg="${esc(ov.content)}">링크 열기</button><button class="main" data-act="ov-close">확인했어요</button></div></div></div>`;
     }
     if (ov.kind === 'qr-confirm') {
       return `<div class="vp-ov" role="alertdialog" aria-label="정말 이 주소를 여시겠어요?"><div class="vp-pop" style="color:#18181b">
@@ -1358,7 +1358,7 @@ export class VirtualPhone {
         <button class="main" data-act="copy">📋 복사</button><button data-act="ov-close">닫기</button></div></div>`;
     }
     if (ov.kind === 'blocked') {
-      return `<div class="vp-full" role="alertdialog" aria-label="위험한 사이트를 막았어요"><span class="big">${PHONE_ICONS.shield}</span><h4>위험한 사이트를 막았어요</h4><p>사기 문자에 있던 사이트예요. 열지 않고 막았어요.<br>이름·비밀번호·계좌번호를 넣지 마세요.</p><button data-act="ov-close">알겠어요</button></div>`;
+      return `<div class="vp-full" role="alertdialog" aria-label="위험한 사이트를 막았어요"><span class="big">${PHONE_ICONS.shield}</span><h4>위험한 사이트를 막았어요</h4><p>사기 문자에 있던 사이트예요. 열지 않고 막았어요.<br>이름·비밀번호·계좌번호를 넣지 마세요.</p><button data-act="ov-close">확인했어요</button></div>`;
     }
     return `<div class="vp-full" role="alertdialog" aria-label="앱 설치를 멈췄어요"><span class="big">${PHONE_ICONS.shield}</span><h4>잠깐만요!<br>앱을 설치하려고 해요</h4><p>조금 전 사기 의심 문자를 받았어요. 문자 안내로 설치하는 앱은 휴대폰 속 돈과 정보를 빼갈 수 있어요. 가족에게 먼저 물어보세요.</p><button data-act="install-cancel">설치하지 않을래요</button><button class="sub" data-act="install-anyway">제가 원해서 설치해요</button></div>`;
   }
