@@ -706,12 +706,13 @@ export class VirtualPhone {
     return this.stack[this.stack.length - 1];
   }
 
-  /** 카메라에 다음 체험용 QR을 무작위로 비춘다(바로 전 QR과 다르게). */
+  /** 카메라에 다음 체험용 QR을 비춘다. */
   private aimQr() {
     if (!this.qr || this.qr.count === 0) return;
-    let index = Math.floor(Math.random() * this.qr.count);
-    if (this.qr.count > 1 && index === this.camQr?.index)
-      index = (index + 1) % this.qr.count;
+    // 처음엔 무작위, 그다음부터는 목록 차례대로(체험용 QR은 위험→주의→안전 차례로 놓여 있다).
+    const index = this.camQr
+      ? (this.camQr.index + 1) % this.qr.count
+      : Math.floor(Math.random() * this.qr.count);
     this.camQr = { index, judged: false, html: this.qr.preview(index) };
   }
 
