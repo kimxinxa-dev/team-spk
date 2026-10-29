@@ -14,7 +14,7 @@
 | 2. QR 감지 — QR 코드를 찍으면 주소를 열지 않고 먼저 검사(단축 주소·수상한 도메인·http·앱 설치 파일 등)해 결과 창으로 알리고 기록으로 저장. 찍는 방법은 체험용 QR 찍기(카메라처럼 비추다 인식, 위험→주의→안전 차례), 카메라로 진짜 QR 찍기, 직접 입력. 결과 창은 위험·주의·안전과 위험도·판단 이유를 보여 주고, **위험**이면 "🔒 링크 접속을 차단했어요", **주의**면 바로 열지 않고 [그래도 열기] → "정말 여시겠어요?" 한 번 더 확인한 뒤 열기, **안전**한 https 주소만 [이 주소 열기]. 메모 고치기·지우기 | `/check` QR 검사 탭 (`src/app/(app)/check/QrScanner.tsx`), 결과 창 `src/components/VerdictSheet.tsx`, 체험용 QR 그림 `src/components/DemoQrImage.tsx`·`src/lib/scan/demo-qr.ts` | Server Action `createQrScan`(판별·저장 후 위험도·이유를 돌려줌)·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 판별 `src/lib/scan/rules.ts`, 체험용 QR 8개(가짜 주소) `src/app/(app)/check/samples.ts` |
 | 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면(또는 문자 앱의 [공유]로 보내면) 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 사용자가 알려 준 정답을 학습 데이터에 더해 그 사람에게 맞춰 판단 | `/check` 붙여 넣기 탭 (`src/app/(app)/check/MessageCheckForm.tsx`) | Server Action `createMessageScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts` |
 
-- 현재 상태: 화면·서버 처리·DB 모델을 만들고 타입 검사·린트·빌드를 확인했습니다. Supabase 프로젝트를 연결하기 전이라 실제 저장·로그인은 아직 확인하지 않았습니다.
+- 현재 상태: 화면·서버 처리·DB 모델을 만들고 타입 검사·린트·빌드를 확인했습니다. Supabase(서울)에 연결해 배포 주소에서 가입·로그인·검사 저장·새로고침 유지·로그아웃 차단·다른 계정 자료 차단을 확인했습니다.
 - 로그인(이메일·비밀번호, Supabase Auth)해야 위 화면을 쓸 수 있고, 내 기록은 나만 보입니다(모든 서버 처리가 로그인 확인 → 입력 검증 → 내 자료인지 확인).
 - 웹앱은 휴대폰의 실제 문자함을 읽을 수 없어서, 1번은 체험용 문자가 가상 휴대폰에 도착하는 상황으로 보여 줍니다. 실제로 받은 문자는 3번(붙여 넣기·[공유])으로 검사합니다.
 
@@ -37,10 +37,10 @@
    - `DATABASE_URL`(Transaction pooler, 6543), `DIRECT_URL`(Session pooler, 5432)
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`(공개 키만 — secret 키는 넣지 않음)
    - Supabase → Authentication → Sign In / Providers에서 이메일 확인(Confirm email)을 끕니다(가입 후 바로 로그인).
-   - (DB 마이그레이션 적용 방법은 마이그레이션을 만든 뒤 추가합니다.)
+   - DB 표 만들기: `npm run db:migrate:deploy` (표 3개와 RLS 보안 설정이 `prisma/migrations/`에 있습니다). 연결 점검은 `npm run db:check`.
 3. `npm run dev`를 실행하고 브라우저에서 http://localhost:3000 을 엽니다.
 
-배포 주소(있으면): 아직 없음 (Vercel 배포 예정)
+배포 주소: https://team-spk.vercel.app (Vercel 서울 `icn1` — Supabase DB도 서울 `ap-northeast-2`. 설정은 `vercel.json`)
 
 ## AI 활용 내역
 - 사용한 도구: Claude Code (Claude Opus 5.5)
@@ -92,4 +92,4 @@
 - 검증: (역할 분담 후 작성)
 
 ## 아쉬운 점과 다음에 할 일
-- 다음에 할 일: Supabase 연결과 DB 마이그레이션(RLS 켜기 포함) → 실제 로그인·저장·수정·삭제 확인 → AI 메시지 분석 → 기록 나눠 읽기(더 보기) → 음성 도우미 → 공유하기(PWA) → Vercel 배포
+- 다음에 할 일: 기록 나눠 읽기(더 보기), 배포 주소에서 Lighthouse 성능 측정·개선, AI 메시지 분석 설명
