@@ -173,7 +173,7 @@ export function VerdictSheet({
 
             <div className="px-5">
               {blockedSite && result.riskLevel !== 'SAFE' && (
-                <p
+                <div
                   className={`mt-5 grid gap-0.5 rounded-2xl border-2 px-4 py-3 ${BLOCK[result.riskLevel]}`}
                 >
                   <b className="text-lg">
@@ -184,7 +184,15 @@ export function VerdictSheet({
                   <span className="text-sm font-bold break-all opacity-85">
                     {blockedSite}
                   </span>
-                </p>
+                  {result.reasons.length > 0 && (
+                    <div className="mt-2 border-t border-current pt-2">
+                      <ReasonTags
+                        level={result.riskLevel}
+                        reasons={result.reasons}
+                      />
+                    </div>
+                  )}
+                </div>
               )}
               <p className="mt-5 flex justify-between gap-2 text-sm font-bold text-zinc-600">
                 <span>{quoteLabel}</span>
@@ -196,19 +204,20 @@ export function VerdictSheet({
               <p className="mt-2 rounded-[6px_18px_18px_18px] bg-zinc-100 px-4 py-3 text-base leading-relaxed break-all whitespace-pre-wrap text-zinc-800">
                 {quote}
               </p>
-              {result.reasons.length > 0 && (
-                <>
-                  <p className="mt-5 text-sm font-bold text-zinc-600">
-                    왜 그런가요?
-                  </p>
-                  <div className="mt-2">
-                    <ReasonTags
-                      level={result.riskLevel}
-                      reasons={result.reasons}
-                    />
-                  </div>
-                </>
-              )}
+              {result.reasons.length > 0 &&
+                !(blockedSite && result.riskLevel !== 'SAFE') && (
+                  <>
+                    <p className="mt-5 text-sm font-bold text-zinc-600">
+                      왜 그런가요?
+                    </p>
+                    <div className="mt-2">
+                      <ReasonTags
+                        level={result.riskLevel}
+                        reasons={result.reasons}
+                      />
+                    </div>
+                  </>
+                )}
             </div>
           </>
         )}

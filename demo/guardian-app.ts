@@ -140,6 +140,8 @@ const QR_STYLE = `<style>
 .gq-block{margin:12px 14px 0;display:grid;gap:2px;border:2px solid;border-radius:14px;padding:10px 12px}
 .gq-block b{font-size:1.02em}
 .gq-block span{font-size:.82em;font-weight:700;word-break:break-all;opacity:.85}
+.gq-block .gq-tags{margin:6px 0 0;padding-top:8px;border-top:1px solid currentColor}
+.gq-block .gq-tags span{opacity:1}
 .gq-open{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);border:0;border-radius:999px;background:#fff;color:#1d4ed8;font:inherit;font-size:13px;font-weight:800;padding:8px 16px;cursor:pointer;animation:gq-show .25s .9s both}
 .gq-msg{margin:0 14px;background:#f4f4f5;border-radius:6px 16px 16px 16px;padding:10px 12px;font-size:.88em;word-break:break-all}
 .gq-tags{margin:0 14px;display:flex;flex-wrap:wrap;gap:6px}
@@ -220,9 +222,9 @@ export function createGuardianApp(opts: {
       ? `<div class="gq-cover"><div class="gq-sheet" role="alertdialog" aria-label="${QR_TEXT[lv].title}">
           <div class="gq-hero" style="background:${t.tint}"><span class="gq-ico" style="background:${t.solid}"><svg viewBox="0 0 24 24" aria-hidden="true">${GLYPH[lv]}</svg></span>
             <small style="color:${t.word}">${LABEL[lv]} · 위험도 ${r.result.score}%</small><b>${QR_TEXT[lv].title}</b><span>${QR_TEXT[lv].advice}</span></div>
-          ${lv !== 'SAFE' ? `<div class="gq-block" style="background:${t.tint};border-color:${t.solid};color:${t.word}"><b>${lv === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(siteOf(q.content))}</span></div>` : ''}
+          ${lv !== 'SAFE' ? `<div class="gq-block" style="background:${t.tint};border-color:${t.solid};color:${t.word}"><b>${lv === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(siteOf(q.content))}</span>${r.result.reasons.length ? `<div class="gq-tags">${r.result.reasons.map((x) => `<span style="${t.tag}">${esc(x)}</span>`).join('')}</div>` : ''}</div>` : ''}
           <div class="gq-sec"><span>찍은 QR 내용</span><span>${esc(q.place)}</span></div><div class="gq-msg">${esc(q.content)}</div>
-          ${r.result.reasons.length ? `<div class="gq-sec"><span>왜 그런가요?</span></div><div class="gq-tags">${r.result.reasons.map((x) => `<span style="${t.tag}">${esc(x)}</span>`).join('')}</div>` : ''}
+          ${lv === 'SAFE' && r.result.reasons.length ? `<div class="gq-sec"><span>왜 그런가요?</span></div><div class="gq-tags">${r.result.reasons.map((x) => `<span style="${t.tag}">${esc(x)}</span>`).join('')}</div>` : ''}
           <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button>${lv === 'SAFE' && isWebLink(q.content) ? `<button style="background:none;color:#1d4ed8" data-act="qr-open" data-arg="${esc(q.content)}">이 주소 열기</button>` : ''}${lv === 'CAUTION' && isWebLink(q.content) ? `<button style="background:none;color:#6b7280;text-decoration:underline;min-height:36px" data-act="qr-ask" data-arg="${esc(q.content)}">그래도 열기</button>` : ''}<button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
         </div></div>`
       : '';

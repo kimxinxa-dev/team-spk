@@ -438,6 +438,7 @@ const CSS = `
 .vp-blockln{display:grid;gap:2px;border:2px solid;border-radius:14px;padding:10px 12px}
 .vp-blockln b{font-size:1.05em}
 .vp-blockln span{font-size:.85em;font-weight:700;word-break:break-all;opacity:.85}
+.vp-blockln ul{margin:6px 0 0;padding:8px 0 0 18px;border-top:1px solid rgba(0,0,0,.12);color:#27272a;font-weight:500;line-height:1.45}
 .vp-camc{flex:none;height:100px;background:#000;display:flex;align-items:center;justify-content:space-around}
 .vp-shut{width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:#fff;box-shadow:inset 0 0 0 3px #000;cursor:pointer}
 .vp-shut:active{transform:scale(.94)}
@@ -587,6 +588,15 @@ export type CameraQr = {
     place: string;
   } | null;
 };
+
+/** 경고 팝업 색상 박스 안에 넣는 판단 이유(최대 3개) */
+function reasonList(reasons: string[]) {
+  if (reasons.length === 0) return '';
+  return `<ul>${reasons
+    .slice(0, 3)
+    .map((r) => `<li>${esc(r)}</li>`)
+    .join('')}</ul>`;
+}
 
 /** 카메라로 찍은 QR의 경고 팝업 제목 */
 const QR_RISK_TITLE: Record<Risk, string> = {
@@ -1315,10 +1325,7 @@ export class VirtualPhone {
         <div class="hd"><i style="background:${t.color}">${PHONE_ICONS.shield}</i><span><small>안심 지킴이 · 방금 받은 ${ov.msg.app === 'sms' ? '문자' : '메신저'}</small><h4 style="color:${t.color}">${t.title}</h4></span></div>
         <div style="display:flex;justify-content:space-between;font-weight:700;font-size:.9em"><span>위험도</span><span style="color:${t.color}">${ov.result.score}%</span></div>
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
-        <ul>${ov.result.reasons
-          .slice(0, 3)
-          .map((r) => `<li>${esc(r)}</li>`)
-          .join('')}</ul>
+        <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>이렇게 판단했어요</b>${reasonList(ov.result.reasons)}</div>
         <div class="tip">링크를 누르지 마세요. 돈·인증번호를 요구하면 가족에게 먼저 물어보세요.</div>
         <div class="btns"><button data-act="ov-view">문자 보기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
     }
@@ -1328,11 +1335,7 @@ export class VirtualPhone {
         <div class="hd"><i style="background:${t.color}">${PHONE_ICONS.shield}</i><span><small>안심 지킴이 · 카메라로 찍은 QR</small><h4 style="color:${t.color}">${QR_RISK_TITLE[ov.result.riskLevel]}</h4></span></div>
         <div style="display:flex;justify-content:space-between;font-weight:700;font-size:.9em"><span>위험도</span><span style="color:${t.color}">${ov.result.score}%</span></div>
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
-        <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>${ov.result.riskLevel === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(hostOf(ov.content))}</span></div>
-        <ul>${ov.result.reasons
-          .slice(0, 3)
-          .map((r) => `<li>${esc(r)}</li>`)
-          .join('')}</ul>
+        <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>${ov.result.riskLevel === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(hostOf(ov.content))}</span>${reasonList(ov.result.reasons)}</div>
         <div class="tip">${esc(ov.place)}에 붙어 있던 QR이에요.</div>
         <div class="btns"><button data-act="qr-next">다른 QR 비추기</button><button class="main" data-act="ov-close">알겠어요</button></div>
         ${ov.result.riskLevel === 'CAUTION' && /^https?:\/\//i.test(ov.content) ? `<button class="vp-askopen" data-act="qr-ask" data-arg="${esc(ov.content)}">그래도 열기</button>` : ''}</div></div>`;
