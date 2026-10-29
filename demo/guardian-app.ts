@@ -107,12 +107,12 @@ const QR_STYLE = `<style>
 .gq-br i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-radius:0 9px 0 0}
 .gq-br i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 9px}
 .gq-br i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 9px 0}
-.gq-chip{position:absolute;left:50%;bottom:14px;max-width:88%;box-sizing:border-box;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;padding:9px 14px;border-radius:999px;font-size:13px;white-space:nowrap;background:#facc15;color:#1c1917;animation:gq-chip .3s cubic-bezier(.2,.8,.2,1) 1.6s both,gq-risk .35s ease 2.4s both}
-.gq-chip .lb{display:grid}
+.gq-chip{position:absolute;left:50%;bottom:14px;max-width:88%;box-sizing:border-box;display:flex;gap:8px;align-items:center;padding:9px 14px;border-radius:999px;font-size:13px;white-space:nowrap;background:#facc15;color:#1c1917;animation:gq-chip .3s cubic-bezier(.2,.8,.2,1) 1.6s both,gq-risk .35s ease 2.4s both}
+.gq-chip .lb{display:grid;flex:none}
 .gq-chip .lb b{grid-area:1/1}
 .gq-chip .a{animation:gq-out .2s 2.4s both}
 .gq-chip .b{animation:gq-show .2s 2.4s both}
-.gq-chip .u{overflow:hidden;text-overflow:ellipsis}
+.gq-chip .u{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .gq-cover{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;padding:10px;animation:gq-show .3s 3s both}
 .gq-sheet{width:100%;max-height:92%;overflow:auto;background:#fff;color:#18181b;border-radius:24px;padding-bottom:14px;animation:gq-up .35s cubic-bezier(.2,.8,.2,1) 3s both}
 .gq-hero{display:grid;justify-items:center;gap:4px;text-align:center;padding:22px 16px 16px;border-radius:24px 24px 0 0}
@@ -175,6 +175,32 @@ export function createGuardianApp(opts: {
         .join('')}</ul>
       <span style="font-size:.85em;font-weight:700">실제로 사기였나요?</span>
       <span class="vp-chips"><button class="vp-mini ${r.verdict === 'SCAM' ? 'on' : ''}" data-act="x:guardian:verdict" data-arg="${r.id}:SCAM">사기 맞아요</button><button class="vp-mini ${r.verdict === 'SAFE' ? 'on' : ''}" data-act="x:guardian:verdict" data-arg="${r.id}:SAFE">아니에요</button><button class="vp-mini" data-act="x:guardian:del" data-arg="${r.id}">지우기</button></span></div>`;
+  }
+
+  /**
+   * QR 찍기 화면(비추기 → 인식 → 판독). withSheet이면 3초 뒤 결과 창까지 띄우고(앱 안 QR 검사),
+   * 아니면 아래 주소 표시의 색으로만 알린다(휴대폰 카메라 앱).
+   */
+  function qrScanView(r: Rec, idx: number, withSheet: boolean) {
+    const q = DEMO_QR_CODES[idx];
+    const lv = r.result.riskLevel;
+    const t = RISK_TONE[lv];
+    const sheet = withSheet
+      ? `<div class="gq-cover"><div class="gq-sheet" role="alertdialog" aria-label="${QR_TEXT[lv].title}">
+          <div class="gq-hero" style="background:${t.tint}"><span class="gq-ico" style="background:${t.solid}"><svg viewBox="0 0 24 24" aria-hidden="true">${GLYPH[lv]}</svg></span>
+            <small style="color:${t.word}">${LABEL[lv]} · 위험도 ${r.result.score}%</small><b>${QR_TEXT[lv].title}</b><span>${QR_TEXT[lv].advice}</span></div>
+          <div class="gq-sec"><span>찍은 QR 내용</span><span>${esc(q.place)}</span></div><div class="gq-msg">${esc(q.content)}</div>
+          ${r.result.reasons.length ? `<div class="gq-sec"><span>왜 그런가요?</span></div><div class="gq-tags">${r.result.reasons.map((x) => `<span style="${t.tag}">${esc(x)}</span>`).join('')}</div>` : ''}
+          <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button><button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
+        </div></div>`
+      : '';
+    return `${QR_STYLE}<div class="gq-vf live" style="--risk:${t.solid};--risk-ink:${t.ink}">
+        <span class="gq-cap">QR 코드를 화면 가운데에 비추세요</span>
+        <div class="gq-float"><div class="gq-board"><p>${esc(q.place)}</p><b>${esc(q.title)}</b>${demoQrSvg(q.content)}</div></div>
+        <span class="gq-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="gq-chip" role="status"><span class="lb"><b class="a">판독 중…</b><b class="b">${CHIP[lv]} · 위험도 ${r.result.score}%</b></span><span class="u">${esc(q.content)}</span></span>
+        ${sheet}
+      </div>`;
   }
 
   const menu = (
@@ -244,23 +270,7 @@ export function createGuardianApp(opts: {
           return {
             html: `${phoneBar('QR 검사')}<div class="vp-pad">지운 기록이에요.</div>`,
           };
-        const lv = r.result.riskLevel;
-        const t = RISK_TONE[lv];
-        return {
-          html: `${QR_STYLE}${phoneBar('QR 검사')}<div class="gq-vf live" style="--risk:${t.solid};--risk-ink:${t.ink}">
-              <span class="gq-cap">QR 코드를 화면 가운데에 비추세요</span>
-              <div class="gq-float"><div class="gq-board"><p>${esc(q.place)}</p><b>${esc(q.title)}</b>${demoQrSvg(q.content)}</div></div>
-              <span class="gq-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-              <span class="gq-chip" role="status"><span class="lb"><b class="a">판독 중…</b><b class="b">${CHIP[lv]}</b></span><span class="u">${esc(q.content)}</span></span>
-              <div class="gq-cover"><div class="gq-sheet" role="alertdialog" aria-label="${QR_TEXT[lv].title}">
-                <div class="gq-hero" style="background:${t.tint}"><span class="gq-ico" style="background:${t.solid}"><svg viewBox="0 0 24 24" aria-hidden="true">${GLYPH[lv]}</svg></span>
-                  <small style="color:${t.word}">${LABEL[lv]} · 위험도 ${r.result.score}%</small><b>${QR_TEXT[lv].title}</b><span>${QR_TEXT[lv].advice}</span></div>
-                <div class="gq-sec"><span>찍은 QR 내용</span><span>${esc(q.place)}</span></div><div class="gq-msg">${esc(q.content)}</div>
-                ${r.result.reasons.length ? `<div class="gq-sec"><span>왜 그런가요?</span></div><div class="gq-tags">${r.result.reasons.map((x) => `<span style="${t.tag}">${esc(x)}</span>`).join('')}</div>` : ''}
-                <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button><button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
-              </div></div>
-            </div>`,
-        };
+        return { html: `${phoneBar('QR 검사')}${qrScanView(r, idx, true)}` };
       }
       return { html: phoneBar('안심 지킴이') };
     },
@@ -307,6 +317,15 @@ export function createGuardianApp(opts: {
 
   return {
     app,
+    /** 휴대폰 카메라 앱의 QR 모드에서 비출 수 있는 체험용 QR */
+    qrTargets: DEMO_QR_CODES.map((q) => ({ label: q.title, place: q.place })),
+    /** 휴대폰 카메라로 QR을 비추면 판독해 기록에 넣고, 카메라 화면(색 표시만, 결과 창 없음)을 돌려준다. */
+    scanQr(index: number) {
+      const q = DEMO_QR_CODES[index];
+      if (!q) return '';
+      const r = add('카메라 QR', q.content, opts.analyzeQr(q.content));
+      return qrScanView(r, index, false);
+    },
     /** 휴대폰에 문자가 도착했을 때 실시간 감지 기록에 넣는다. */
     record(source: string, text: string, result: Analysis) {
       add(source, text, result);
