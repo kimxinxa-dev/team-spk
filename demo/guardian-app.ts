@@ -87,7 +87,8 @@ const RISK_TONE: Record<
 /**
  * QR 찍기 연출. 휴대폰 화면은 버튼을 누를 때만 다시 그려지므로, 비추기(0~1.6초) → 인식(1.6초) → 판독(2.4초) → 결과 창(3초)을
  * CSS 시간차로 한 화면 안에서 보여 준다. 판독 결과는 화면을 그리기 전에 이미 계산해 기록에 넣어 둔다.
- * 틀이 QR 그림에 맞게 조여지는 크기·위치(152px, 아래로 21px)는 안내판(.gq-board)의 글자 높이·그림 크기에서 나온 값이다.
+ * 판독할 때 모서리 틀은 QR 그림(130px)에 앞뒤 4px 여백을 두고 맞춰 조여진다(138px). 위치(아래로 21px)는
+ * 안내판(.gq-board)의 위쪽 글자 높이(17px+21px+4px)만큼 그림이 안내판 가운데보다 아래에 있어서 생긴 값이다.
  */
 const QR_STYLE = `<style>
 .gq-vf{position:relative;height:200px;flex:none;background:radial-gradient(80% 60% at 50% 45%,#57534e 0%,#292524 55%,#0c0a09 100%);display:grid;place-items:center;overflow:hidden;color:#fff}
@@ -132,8 +133,8 @@ const QR_STYLE = `<style>
 .gq-list small{color:#71717a;font-size:.75em}
 @keyframes gq-in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
 @keyframes gq-float{50%{transform:translateY(-4px)}}
-@keyframes gq-lock{to{width:152px;height:152px;transform:translate(-50%,calc(-50% + 21px))}}
-@keyframes gq-yellow{to{border-color:#facc15}}
+@keyframes gq-lock{to{width:138px;height:138px;transform:translate(-50%,calc(-50% + 21px))}}
+@keyframes gq-yellow{to{border-color:#facc15;width:20px;height:20px}}
 @keyframes gq-chip{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes gq-risk{to{background:var(--risk);color:var(--risk-ink)}}
 @keyframes gq-out{to{opacity:0}}
