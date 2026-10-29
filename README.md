@@ -3,38 +3,36 @@
 프로젝트를 시작하기 전에 [docs/SETUP.md](docs/SETUP.md)를 먼저 읽으세요.
 
 ## 프로젝트 개요
-- 한 줄 소개: 어르신에게 오는 스미싱(문자 사기)을 받는 순간 감지해 막고, QR 코드와 받은 문자를 학습된 AI가 검사하는 스미싱 차단 웹앱(PWA) (개발 중)
+- 한 줄 소개: 어르신에게 오는 스미싱(문자 사기)을 받는 순간 감지해 막고, QR 코드와 받은 문자를 학습된 AI가 검사하는 스미싱 차단 웹앱(PWA)
 - 누구를 위한 앱인가: 스마트폰 사기 문자에 취약한 어르신과, 어르신을 돌보는 가족(보호자)
 - 어떤 상황에서 쓰는가: 택배·가족 사칭·정부 지원금 같은 의심 문자나 카톡을 받았을 때, 전단지·우편물의 QR 코드를 찍기 전에, 받은 문자가 사기인지 확인하고 싶을 때
+- 화면 구성: 첫 화면 `/`는 **가상 휴대폰 하나**입니다. 휴대폰 밖에는 체험 문자를 받는 작은 막대([문자 고르기 ▼][문자 받기] — 휴대폰에서 카메라 앱을 켜면 [QR 고르기 ▼][QR 비추기])만 있고, 로그인·가입과 모든 기능은 휴대폰 홈 화면의 「안심 지킴이」 앱을 눌러 그 안에서 합니다. 393×852·360×780 휴대폰 화면과 1280×800 PC 화면 모두 스크롤 없이 한 화면에 들어옵니다.
 
 ## 주요 기능
 | 과제의 꼭 있어야 하는 기능 | 화면(프론트엔드) | API(백엔드) |
 | --- | --- | --- |
-| 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도별 경고 팝업을 띄우고, 문자 속 위험한 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 받은 문자는 말풍선을 눌러 복사할 수 있음. 감지 결과는 검사 기록으로 저장되고 "사기 맞아요/아니에요" 정답 알려 주기·메모 고치기·지우기 | 첫 화면 `/`의 가상 휴대폰 — 위 작은 막대 [문자 받기] (`src/app/PhoneStage.tsx`), 휴대폰 안 안심 지킴이 > 실시간 감지 기록 (`src/lib/phone/guardian-app.ts`), 가상 휴대폰 `src/lib/phone/engine.ts`. PC용 `/check` 실시간 감지 탭도 있음 | Server Action `phoneSaveScan`·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), `/check`용 `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
-| 2. QR 감지 — QR 코드를 찍으면 주소를 열지 않고 먼저 검사(단축 주소·수상한 도메인·http·앱 설치 파일 등)해 결과 창으로 알리고 기록으로 저장. 찍는 방법은 체험용 QR 찍기(카메라처럼 비추다 인식, 위험→주의→안전 차례), 카메라로 진짜 QR 찍기, 직접 입력. 결과 창은 위험·주의·안전과 위험도·판단 이유를 보여 주고, **위험**이면 "🔒 링크 접속을 차단했어요", **주의**면 바로 열지 않고 [그래도 열기] → "정말 여시겠어요?" 한 번 더 확인한 뒤 열기, **안전**한 https 주소만 [이 주소 열기]. 메모 고치기·지우기 | 가상 휴대폰의 카메라 앱·안심 지킴이 > QR 검사 (`/?app=guardian&view=qr`), PC용 `/check` QR 검사 탭 (`src/app/(app)/check/QrScanner.tsx`), 결과 창 `src/components/VerdictSheet.tsx`, 체험용 QR 그림 `src/components/DemoQrImage.tsx`·`src/lib/scan/demo-qr.ts` | Server Action `createQrScan`(판별·저장 후 위험도·이유를 돌려줌)·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 판별 `src/lib/scan/rules.ts`, 체험용 QR 8개(가짜 주소) `src/app/(app)/check/samples.ts` |
-| 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면(또는 문자 앱의 [공유]로 보내면) 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 사용자가 알려 준 정답을 학습 데이터에 더해 그 사람에게 맞춰 판단 | 안심 지킴이 > 붙여 넣어 검사 (`/?app=guardian&view=paste`), PC용 `/check` 붙여 넣기 탭 (`src/app/(app)/check/MessageCheckForm.tsx`) | Server Action `phoneSaveScan`·`createMessageScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts` |
+| 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 [문자 받기]로 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도(%)별 경고 팝업을 띄우고, 위험한 문자 속 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 받은 문자는 말풍선을 눌러 복사할 수 있음. 감지 결과는 내 검사 기록으로 저장(넣기) → 안심 지킴이 > 실시간 감지 기록에서 목록·자세히 보기 → 새로 고쳐도 남음 → "사기 맞아요/아니에요"로 정답 고치기 → 지우기 | 첫 화면 `/` (`src/app/PhoneStage.tsx`), 안심 지킴이 > 실시간 감지 기록 `/?app=guardian&view=guard` (`src/lib/phone/guardian-app.ts`), 가상 휴대폰 `src/lib/phone/engine.ts`. PC용 `/check` 실시간 감지 탭(`src/app/(app)/check/demo-phone.tsx`)도 있음 | Server Action `phoneSaveScan`(서버에서 다시 채점·저장)·`phoneListScans`·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), PC용 `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
+| 2. QR 감지 — QR 코드를 찍으면 주소를 열지 않고 먼저 검사(단축 주소·수상한 도메인·http·앱 설치 파일 등)해 결과를 알리고 기록으로 저장. 휴대폰의 **카메라 앱**은 실제 카메라처럼 검은 화면·격자에 체험용 QR이 비춰지고 셔터를 누르면 판독, 위험·주의는 문자와 같은 경고 팝업. 안심 지킴이 > QR 검사는 체험용 QR을 골라 찍고 결과 창을 띄움. **위험**이면 "🔒 링크 접속을 차단했어요"(그 주소를 막아 둠), **주의**면 바로 열지 않고 [그래도 열기] → "정말 여시겠어요?" 확인 뒤 열기, **안전**한 https 주소만 [이 주소 열기]. 기록 목록·정답 고치기·지우기는 1번과 같은 실시간 감지 기록에서 | 가상 휴대폰 카메라 앱(`src/lib/phone/engine.ts`의 QR 모드), 안심 지킴이 > QR 검사 `/?app=guardian&view=qr` (`src/lib/phone/guardian-app.ts`), 체험용 QR 그림 `src/lib/scan/demo-qr.ts`. PC용 `/check` QR 검사 탭(진짜 카메라로 QR 찍기·직접 입력도 됨, `src/app/(app)/check/QrScanner.tsx`·결과 창 `src/components/VerdictSheet.tsx`) | Server Action `phoneSaveScan`(QR이면 `qrScanSchema`로 검증)·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), PC용 `createQrScan`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 판별 `src/lib/scan/rules.ts`, 체험용 QR 8개(가짜 주소) `src/app/(app)/check/samples.ts` |
+| 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 휴대폰 메시지 앱에서 문자를 눌러 [복사] → 안심 지킴이 > 붙여 넣어 검사의 [📋 붙여넣기] → [AI로 검사하기]. 사용자가 알려 준 정답("사기 맞아요/아니에요")을 학습 데이터에 더해 그 사람에게 맞춰 판단 | 안심 지킴이 > 붙여 넣어 검사 `/?app=guardian&view=paste` (`src/lib/phone/guardian-app.ts`). PC용 `/check` 붙여 넣기 탭(`src/app/(app)/check/MessageCheckForm.tsx`, 문자 앱의 [공유]로 받기) | Server Action `phoneSaveScan`·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), PC용 `createMessageScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts`, 내 정답 기록 `getPersonalExamples` (`src/lib/queries.ts`) |
 
-- 현재 상태: 화면·서버 처리·DB 모델을 만들고 타입 검사·린트·빌드를 확인했습니다. Supabase(서울)에 연결해 배포 주소에서 가입·로그인·검사 저장·새로고침 유지·로그아웃 차단·다른 계정 자료 차단을 확인했습니다.
-- 로그인(이메일·비밀번호, Supabase Auth)해야 위 화면을 쓸 수 있고, 내 기록은 나만 보입니다(모든 서버 처리가 로그인 확인 → 입력 검증 → 내 자료인지 확인).
-- 첫 화면 `/`는 가상 휴대폰 하나입니다. 휴대폰 밖에는 체험 문자를 받는 작은 막대([문자 고르기 ▼][문자 받기], 카메라 앱을 켜면 [QR 비추기])만 있고, 로그인·가입, 실시간 감지 기록, QR 검사, 붙여 넣어 검사, 보호자·연락처, 로그아웃은 모두 휴대폰 홈 화면의 「안심 지킴이」 앱을 눌러 그 안에서 합니다. 393×852 휴대폰 화면과 PC 화면 모두 스크롤 없이 한 화면에 들어옵니다.
-  - 앱을 누르면 먼저 로그인 화면(로그인/가입하기 탭, 비밀번호 보기, 칸별 안내, Enter로 제출). 로그인 정보는 서버에서 Supabase Auth로 확인(`src/lib/auth-core.ts`)
-  - 주소로 바로 열기: `/?app=guardian`(로그인 화면), `/?app=guardian&view=guard`(실시간 감지 기록), `view=qr`(QR 검사), `view=paste`(붙여 넣어 검사), `view=contacts`(보호자·연락처). 로그인 전이면 로그인 화면을 먼저 보여 주고, 로그인하면 그 화면으로 이어짐
-- 로그인 화면 `/login` (PC용, `src/app/login/`): 로그인/가입하기 탭, 입력 예시(예: hong@naver.com), 👁 비밀번호 보기, 가입할 때 "비밀번호 한 번 더"(서버에서도 `signUpSchema`로 다시 비교), 잘못 넣은 칸은 빨간 테두리와 칸 아래 안내, 로그인에 실패하면 [가입하기] 안내. 로그인·가입하면 바로 문자 지킴이의 가상 휴대폰(`/check?tab=demo`)으로 이동
-- 웹앱은 휴대폰의 실제 문자함을 읽을 수 없어서, 1번은 체험용 문자가 가상 휴대폰에 도착하는 상황으로 보여 줍니다. 실제로 받은 문자는 3번(붙여 넣기·[공유])으로 검사합니다.
+- 현재 상태: 위 세 기능과 로그인·연락처를 배포 주소에서 393×852 화면으로 처음부터 끝까지 자동으로 눌러 확인했습니다(아래 「결과를 확인한 방법」).
+- 로그인: 「안심 지킴이」 앱을 누르면 먼저 로그인 화면(로그인/가입하기 탭, 입력 예시, 비밀번호 보기, 가입할 때 "비밀번호 한 번 더", 칸별 안내, 실패하면 [가입하기] 안내, Enter로 제출). 이메일·비밀번호는 서버에서 Supabase Auth로 확인합니다(`src/lib/auth-core.ts`). 로그인한 이메일과 [로그아웃]은 앱 메인 화면 위쪽에 있습니다.
+- 내 기록은 나만 보입니다. 모든 서버 처리가 로그인 확인 → Zod 입력 검증 → 내 자료인지(userId 조건) 확인 순서이고, 화면이 보낸 위험도는 믿지 않고 서버에서 다시 채점해 저장합니다. 로그인하지 않아도 문자를 받아 경고 팝업은 볼 수 있고, 그때 감지한 기록은 로그인하는 순간 내 기록으로 저장됩니다.
+- 주소로 화면 바로 열기: `/?app=guardian`(로그인), `/?app=guardian&view=guard`(실시간 감지 기록), `view=qr`(QR 검사), `view=paste`(붙여 넣어 검사), `view=contacts`(보호자·연락처). 로그인 전이면 로그인 화면을 먼저 보여 주고, 로그인하면 그 화면으로 이어집니다.
+- 웹앱은 휴대폰의 실제 문자함을 읽을 수 없어서, 1번은 체험용 문자가 가상 휴대폰에 도착하는 상황으로 보여 줍니다. 실제로 받은 문자는 3번(붙여 넣기, PC용 화면은 문자 앱의 [공유])으로 검사합니다.
 
 더 만든 기능:
-- 보호자·연락처 관리 — 가족·보호자 추가·고치기·지우기, 바로 전화 걸기 (`/contacts`)
-- 홈 요약 — 세 가지 검사 기록(전체·위험·QR·정답 알려 준 기록)을 모아 보여 주는 화면 (`/home`)
-- 시뮬레이션 — 가상 휴대폰에 설치된 앱으로 세 기능을 체험하는 미리보기 페이지. 배포 주소 https://team-spk.vercel.app/simulation.html 에서 바로 열린다(`npm run build`가 함께 만든다). 파일로 보낼 때는 `npm run demo:build`로 `demo/dist/simulation.html`을 만든다 (`demo/`)
-  - 실제 앱 첫 화면(`/`)과 같은 화면·같은 안심 지킴이 앱(`src/lib/phone/guardian-app.ts`)을 쓰고, 저장만 페이지 안 메모리(`demo/memory-store.ts`)에 함. 로그인도 휴대폰 안 안심 지킴이 앱에서 하며 계정을 실제로 만들지 않음(형식이 맞으면 로그인되고, 실패 장면은 비밀번호 `wrongpass`)
-  - 경고 팝업의 닫기 버튼은 앱 결과 창과 같은 [확인했어요]로 통일
-  - QR: 가상 휴대폰의 **카메라 앱**을 열면 실제 카메라처럼 검은 화면·격자에 체험용 QR이 비춰지고, **셔터를 누르면** 모서리 틀이 QR 크기에 맞게 조여지며 판독. 위험·주의는 문자 판독과 같은 경고 팝업(위험도, 차단 문구·사이트 이름·판단 이유를 한 색상 박스에)과 [링크 열기] — 위험은 막아 둔 주소라 "위험한 사이트를 막았어요" 화면, 주의는 "정말 여시겠어요?" 확인 창. 정상은 팝업 없이 초록 "안전한 QR" 표시. 카메라 앱에서는 위 막대가 [QR 비추기]로 바뀌어 비출 QR을 고를 수 있음. 안심 지킴이 앱 안 QR 검사도 같은 연출·결과 창 (`src/lib/phone/guardian-app.ts`, 카메라 QR 모드 `src/lib/phone/engine.ts`)
-- PWA — 홈 화면에 설치, 문자 앱에서 [공유]로 바로 검사 (`src/app/manifest.ts`, `public/sw.js`)
+- 보호자·연락처 — 안심 지킴이 > 보호자·연락처(`/?app=guardian&view=contacts`)에서 가족·보호자 추가(이름·전화번호·관계·보호자 표시)·지우기·바로 전화 걸기. Server Action `phoneListContacts`·`phoneAddContact`·`phoneDeleteContact` (`src/app/phone-actions.ts`). PC용 `/contacts`는 고치기도 됨(`src/app/(app)/contacts/`)
+- 앱 메인 요약 — 안심 지킴이 메인에 검사 수·위험 막은 수, PC용 홈 요약 `/home`(전체·위험·QR·정답 알려 준 기록, `src/lib/data/stats.ts`)
+- PC용 화면 — `/login`, `/check`(실시간 감지·QR 검사·붙여 넣기 탭과 검사 기록, 메모 고치기), `/home`, `/contacts`. 로그인하지 않고 열면 `/login`으로 보냅니다(`src/proxy.ts` + 서버에서 다시 확인)
+- 시뮬레이션 — 실제 앱 첫 화면과 같은 화면·같은 안심 지킴이 앱 코드를 쓰고 저장만 페이지 안 메모리에 하는 미리보기(`demo/memory-store.ts`, 계정을 실제로 만들지 않음 — 형식이 맞으면 로그인되고, 실패 장면은 비밀번호 `wrongpass`). https://team-spk.vercel.app/simulation.html (`npm run build`가 함께 만든다). 파일로 보낼 때는 `npm run demo:build`로 `demo/dist/simulation.html`을 만든다 (`demo/`)
+- PWA — 홈 화면에 설치, 문자 앱에서 [공유]로 바로 검사 (`src/app/manifest.ts`, `public/sw.js` — 화면·자료는 캐시하지 않음)
 
 ## 기술 스택
-- 프론트엔드: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Zod(입력 규칙), 브라우저 내장 QR 인식(BarcodeDetector)
+- 프론트엔드: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Zod(화면과 서버가 같은 입력 규칙 `src/lib/validation.ts`), 가상 휴대폰은 직접 만든 화면 엔진(`src/lib/phone/engine.ts`), PC용 QR 화면은 브라우저 내장 QR 인식(BarcodeDetector)
 - 백엔드: Next.js Server Action, Prisma 7 (`@prisma/adapter-pg`), Supabase Auth (`@supabase/ssr`) 로그인, `src/proxy.ts`에서 로그인 세션 갱신·보호된 화면 접근 차단
-- 데이터(어디에, 무엇을): Supabase PostgreSQL (`prisma/schema.prisma`) — `users`(회원, Supabase Auth 사용자 id), `scan_records`(메시지·QR 검사 기록: 내용·위험도·이유·메모), `contacts`(보호자·연락처)
+- AI: 외부 AI API 없이 서버·화면에서 함께 쓰는 자체 학습 모델 — 사기·정상 문자 학습 데이터(`src/lib/scan/dataset.ts`)로 만든 나이브 베이즈 채점(`src/lib/scan/model.ts`)과 규칙 판별(`src/lib/scan/rules.ts`)을 합쳐 위험도(%)·이유를 낸다(`src/lib/scan/analyze.ts`). 사용자가 알려 준 정답 기록(최근 50개)을 더해 사람마다 맞춰 판단. QR은 주소 규칙 판별만 쓴다
+- 데이터(어디에, 무엇을): Supabase PostgreSQL 서울(`prisma/schema.prisma`) — `users`(회원, Supabase Auth 사용자 id), `scan_records`(문자·QR 검사 기록: 받은 곳·내용·위험도·이유·정답·메모), `contacts`(보호자·연락처). 모든 표에 RLS를 켜 공개 Data API로는 읽을 수 없고, 서버(Prisma)만 읽고 쓴다
 
 ## 실행 방법
 <!-- 처음 보는 사람이 그대로 따라 할 수 있게 쓴다. 시작 저장소 그대로라면: npm install → npm run dev → 브라우저에서 http://localhost:3000 -->
@@ -46,7 +44,11 @@
    - DB 표 만들기: `npm run db:migrate:deploy` (표 3개와 RLS 보안 설정이 `prisma/migrations/`에 있습니다). 연결 점검은 `npm run db:check`.
 3. `npm run dev`를 실행하고 브라우저에서 http://localhost:3000 을 엽니다.
 
-배포 주소: https://team-spk.vercel.app (Vercel 서울 `icn1` — Supabase DB도 서울 `ap-northeast-2`. 설정은 `vercel.json`)
+배포 주소: https://team-spk.vercel.app (Vercel 서울 `icn1` — Supabase DB도 서울 `ap-northeast-2`. 설정은 `vercel.json`, main에 올리면 자동 배포)
+- 로그인 화면: https://team-spk.vercel.app/?app=guardian
+- 주요 기능 1 실시간 감지: https://team-spk.vercel.app/ (위 [문자 받기]) · 감지 기록 https://team-spk.vercel.app/?app=guardian&view=guard
+- 주요 기능 2 QR 감지: https://team-spk.vercel.app/?app=guardian&view=qr
+- 주요 기능 3 붙여 넣기 AI 판단: https://team-spk.vercel.app/?app=guardian&view=paste
 
 ## AI 활용 내역
 - 사용한 도구: Claude Code (Claude Opus 5.5)
@@ -85,6 +87,12 @@
   - "아이디는 꼭 이메일을 써야하는게 규칙인가?"
   - "나중에 실제 시뮬레이션에서는 지금 로그인 화면에서 로그인하고나면 바로 핸드폰시뮬레이션으로 넘어가는거야?" / "일단 적용해줘"
   - "시뮬레이션에 로그인화면과 핸드폰화면이 연결이 안되는데?"
+  - "일단 국가를 한국으로 재설정 해주실 수 있나요?"
+  - "파일 393*852 한 화면 안에 다 들어오게 해주세요"
+  - "html에 적용된 레이아웃을 그대로 vercel.app페이지를 toggle device toolbar로 열었을때 똑같이 나오게  적용시킬 수 있을까요??"
+  - "로그인하는 화면도 어플을 클릭해서 들어가서 나오도록 만들어 주시고, 상단 바에 있는 메뉴 내용도 모두 가상의 핸드폰 안의 앱에 들어가있게 수정해주세요 문자 수신만 소형 메뉴바를 통해 할 수 있게 만들어주고, 나머지 기능들은 모두 가상의 핸드폰 안에서 확인할 수 있게 수정해주세요"
+  - "readme에 연락처 같은 개인정보 올라간 거 있나요?"
+  - "최종 배포된 파일 읽어서 readmd 기능 등 수정해주세요"
 - AI가 만든 것 / 사람이 고친 것:
   - AI: 대회 사이트의 공개 설정에서 본선 규칙·심사 세부 기준을 찾아 [.agent/hackathon.md](.agent/hackathon.md) 작업 지침으로 정리, README 갱신 규칙 추가, DB·API 보안 사고 방지 점검표(비밀값·Supabase RLS·서버 권한 확인) 작성, 이 README 초안 작성
   - AI: 아이디어를 웹에서 가능한 범위로 검토(웹은 문자함 자동 읽기·휴대폰 설정 제어가 불가 → 공유하기·붙여 넣기 검사, 카메라 QR 검사, 음성으로 앱 기능·전화 앱 열기로 조정)하고 심사 기준에 맞춘 주요 기능 3개를 제안
@@ -97,7 +105,10 @@
   - 사람: 심사 기준(주요 기능 1·2·3 채점)을 확인한 뒤 서비스 핵심을 스미싱 차단으로 좁히고 주요 기능 3개(실시간 감지·차단, QR 감지, 붙여 넣기 AI 판단)를 정함
   - 사람: 웹으로 실제 문자함을 읽을 수 없는 한계를 확인하고 체험 문자로 수신 상황을 연출하기로 결정, 두 팀원의 기능을 비교 페이지로 보고 합칠 범위(주요 기능 3개, 연락처는 추가 기능)를 정함
   - 사람: 심사 기준 확인 범위(세부 기준까지)를 다시 확인하도록 요청하고, 지침으로 남길 내용과 README 작성 방식을 정함. 운영진이 강조한 DB·API 보안 사고 주의 사항을 전달해 지침에 반영하게 함. 서비스 주제(어르신 스미싱 방지)를 정하고, 안드로이드 앱 대신 웹앱을 기본으로 만들라는 운영진 안내를 확인해 방향을 정함
-- 결과를 확인한 방법: 대회 사이트 화면의 심사 기준과 정리한 문서를 비교, `npx prettier --check`로 문서 서식 확인, GitHub 저장소에서 커밋 반영 확인. 뼈대는 `npm run typecheck`·`npm run lint`·`npm run db:validate`·`npm run build` 통과, 예시 사기 문자 5개·QR 5개로 판별 결과 확인, 로그아웃 상태로 `/check`를 열면 `/login`으로 가는지 확인. 학습 AI 채점은 학습 데이터에 없는 예시 문자 7개(사기 4·정상 3)로 결과가 맞는지 확인, 합친 코드는 `tsc`·`eslint`·`next build` 통과. QR 감지는 체험용 QR 8개의 판독 결과(위험 3·주의 3·안전 2)를 판별 코드로 직접 계산해 확인하고, 시뮬레이션은 헤드리스 크롬으로 카메라 열기 → 셔터 → 경고 팝업·차단 문구·확인 창·[링크 열기]를 자동으로 눌러 화면을 찍어 확인, 바꿀 때마다 `npm run typecheck`·`eslint`·`npm run build`·`npm run demo:build` 통과. 로그인 화면은 앱을 실제로 띄워 휴대폰 폭(390px)과 넓은 화면을 찍어 확인하고, 크롬을 원격 조종해 [가입하기] 탭에서 서로 다른 비밀번호로 가입을 눌러 서버가 "비밀번호가 서로 달라요"로 막는지 확인. 배포 주소에서 새 로그인 화면이 뜨는지와 로그아웃 상태로 `/check`를 열면 `/login`으로 보내지는지(307) 확인. 시뮬레이션은 로그인하면 휴대폰 화면으로 넘어가는지 원격 조종으로 확인
+  - AI: 배포 — Supabase를 서울 지역 새 프로젝트로 옮기고 DB 표·RLS를 migration으로 만듦, Vercel 서버 지역을 서울(`icn1`)로 맞추고 빌드 전에 검사(`npm run check`)를 돌리게 함, 시뮬레이션을 배포 주소 `/simulation.html`로 함께 배포
+  - AI: 첫 화면을 가상 휴대폰 하나로 바꾸고 로그인·가입, 실시간 감지 기록, QR 검사, 붙여 넣어 검사, 보호자·연락처, 로그아웃을 휴대폰 안 안심 지킴이 앱으로 옮김. 휴대폰 안 앱이 부르는 서버 기능(`src/app/phone-actions.ts`)을 만들고 로그인 처리를 `src/lib/auth-core.ts`로 모아 `/login`과 함께 씀. 안심 지킴이 앱을 실제 앱과 시뮬레이션이 같은 코드로 쓰도록 `src/lib/phone/guardian-app.ts`로 옮김(저장만 서버/메모리로 나눔). 주소로 앱 화면 바로 열기, 입력칸 Enter로 제출, 다시 그려도 입력 커서 유지를 휴대폰 엔진에 추가. 393×852 등 화면 높이에 맞춰 휴대폰 크기를 정해 스크롤 없이 한 화면에
+  - 사람: 시연 화면 크기(393×852)를 정하고, 휴대폰 밖에는 문자 받기만 남기고 로그인과 나머지 기능은 모두 휴대폰 안 앱에서 하도록 화면 구성을 정함. README에 연락처 같은 개인정보가 올라가지 않았는지 확인을 요청함
+- 결과를 확인한 방법: 대회 사이트 화면의 심사 기준과 정리한 문서를 비교, `npx prettier --check`로 문서 서식 확인, GitHub 저장소에서 커밋 반영 확인. 뼈대는 `npm run typecheck`·`npm run lint`·`npm run db:validate`·`npm run build` 통과, 예시 사기 문자 5개·QR 5개로 판별 결과 확인, 로그아웃 상태로 `/check`를 열면 `/login`으로 가는지 확인. 학습 AI 채점은 학습 데이터에 없는 예시 문자 7개(사기 4·정상 3)로 결과가 맞는지 확인, 합친 코드는 `tsc`·`eslint`·`next build` 통과. QR 감지는 체험용 QR 8개의 판독 결과(위험 3·주의 3·안전 2)를 판별 코드로 직접 계산해 확인하고, 시뮬레이션은 헤드리스 크롬으로 카메라 열기 → 셔터 → 경고 팝업·차단 문구·확인 창·[링크 열기]를 자동으로 눌러 화면을 찍어 확인, 바꿀 때마다 `npm run typecheck`·`eslint`·`npm run build`·`npm run demo:build` 통과. 로그인 화면은 앱을 실제로 띄워 휴대폰 폭(390px)과 넓은 화면을 찍어 확인하고, 크롬을 원격 조종해 [가입하기] 탭에서 서로 다른 비밀번호로 가입을 눌러 서버가 "비밀번호가 서로 달라요"로 막는지 확인. 배포 주소에서 새 로그인 화면이 뜨는지와 로그아웃 상태로 `/check`를 열면 `/login`으로 보내지는지(307) 확인. 시뮬레이션은 로그인하면 휴대폰 화면으로 넘어가는지 원격 조종으로 확인. 첫 화면을 가상 휴대폰으로 바꾼 뒤에는 헤드리스 크롬을 393×852 휴대폰 화면으로 띄워 배포 주소와 시뮬레이션에서 같은 시나리오 20단계를 자동으로 눌러 모두 통과 — 막대에는 [문자 받기]만 있는지, 안심 지킴이 앱을 누르면 로그인 화면, 빈 칸·틀린 비밀번호 안내, 로그인 → 앱 메인, 문자 받기 → 경고 팝업 → 실시간 감지 기록에 저장, 정답 알려 주기, QR 검사 결과 창, 붙여 넣어 검사, 연락처 추가·지우기, 로그아웃, 주소로 QR 화면 바로 열기(로그인 뒤 이어짐), 처음부터 끝까지 스크롤 없이 한 화면. 360×780·1280×800에서도 한 화면에 들어오는지 확인. 바꿀 때마다 `npm run check`(타입 검사·eslint·prettier)와 `next build` 통과. README·Git 기록에 전화번호·이메일·계정 비밀번호·DB 주소·키가 없는지 검색으로 확인
 
 ## 팀원 역할
 (이름·학번 없이 역할만)
@@ -107,4 +118,5 @@
 - 검증: B
 
 ## 아쉬운 점과 다음에 할 일
-- 다음에 할 일: 기록 나눠 읽기(더 보기), 배포 주소에서 Lighthouse 성능 측정·개선, AI 메시지 분석 설명
+- 아쉬운 점: 웹앱은 휴대폰의 실제 문자함을 읽을 수 없어 실시간 감지는 체험 문자로 보여 줍니다. 휴대폰 안 앱과 PC용 화면(`/check` 등)이 같은 기능을 따로 갖고 있어 화면 코드가 두 벌입니다. 휴대폰 안 앱에서는 메모 고치기와 연락처 고치기가 아직 없습니다(PC용 화면에는 있음).
+- 다음에 할 일: 기록 나눠 읽기(더 보기 — 지금은 최근 20개), 휴대폰 안 앱에 메모·연락처 고치기, 배포 주소에서 Lighthouse 성능 측정·개선, AI 메시지 분석 설명
