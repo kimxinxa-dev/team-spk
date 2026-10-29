@@ -46,7 +46,43 @@ type Screen =
   | { id: 'clock' }
   | { id: 'alarm-edit' }
   | { id: 'browser'; host: string }
-  | { id: 'installer' };
+  | { id: 'installer' }
+  | { id: 'ext'; app: string; view: string; data: string };
+
+/** 휴대폰에 따로 설치하는 앱이 화면을 바꾸거나 안내를 시작할 때 쓰는 기능 */
+export type PhoneAppContext = {
+  /** 이 앱의 다음 화면으로 이동 */
+  push(view: string, data?: string): void;
+  back(): void;
+  toast(text: string): void;
+  startGuide(guide: PhoneGuide): void;
+  /** 휴대폰 안 입력칸(data-model)의 현재 값 */
+  drafts: Record<string, string>;
+};
+
+/**
+ * 휴대폰에 설치하는 앱. render는 화면 HTML을, handle은 data-act="x:앱id:동작" 버튼의 동작을 맡는다.
+ * handle이 false를 돌려주면 안내 단계를 넘기지 않는다.
+ */
+export type PhoneApp = {
+  id: string;
+  label: string;
+  icon: string;
+  bg: string;
+  render(
+    view: string,
+    data: string,
+    ctx: PhoneAppContext,
+  ): { html: string; dark?: boolean };
+  handle(action: string, arg: string, ctx: PhoneAppContext): boolean | void;
+};
+
+/** 설치 앱이 쓰는 화면 위쪽 막대(뒤로 버튼 + 제목) */
+export function phoneBar(title: string) {
+  return `<div class="vp-bar"><button data-act="back" aria-label="뒤로">${ICON.back}</button>${esc(title)}</div>`;
+}
+
+export { esc as escapeHtml };
 
 type ChatLine = { me: boolean; text?: string; photo?: string };
 type SmsLine = { from: string; text: string; risk?: Analysis };
@@ -108,7 +144,7 @@ const RISK_TEXT: Record<Risk, { icon: string; title: string; color: string }> =
 
 const STYLE_ID = 'vp-style';
 const CSS = `
-.vp{position:relative;width:100%;max-width:330px;aspect-ratio:9/18.5;border-radius:44px;background:#0b0b0f;padding:10px;box-sizing:border-box;box-shadow:0 18px 40px rgba(0,0,0,.25);user-select:none;-webkit-tap-highlight-color:transparent}
+.vp{position:relative;width:100%;max-width:var(--vp-max,330px);aspect-ratio:9/18.5;border-radius:44px;background:#0b0b0f;padding:10px;box-sizing:border-box;box-shadow:0 18px 40px rgba(0,0,0,.25);user-select:none;-webkit-tap-highlight-color:transparent}
 .vp *{box-sizing:border-box}
 .vp-scr{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:#f2f3f7;color:#16181d;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;display:flex;flex-direction:column;font-size:calc(13px * var(--vp-font,1))}
 .vp-cam-hole{position:absolute;top:8px;left:50%;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#000;z-index:30}
@@ -202,6 +238,29 @@ const CSS = `
 .vp-target{outline:4px solid #facc15 !important;outline-offset:2px;border-radius:14px;animation:vppulse 1.1s ease-in-out infinite;position:relative;z-index:2}
 @keyframes vppulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.8)}50%{box-shadow:0 0 0 9px rgba(250,204,21,0)}}
 .vp-toast{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);z-index:60;background:rgba(24,24,27,.9);color:#fff;border-radius:16px;padding:6px 14px;font-size:12px;white-space:nowrap}
+.vp-pad{padding:12px;display:grid;gap:10px;align-content:start}
+.vp-card{background:#fff;border-radius:16px;padding:12px;display:grid;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.vp-card.DANGER{border:2px solid #b91c1c;background:#fef2f2}.vp-card.CAUTION{border:2px solid #b45309;background:#fffbeb}.vp-card.SAFE{border:2px solid #15803d;background:#f0fdf4}
+.vp-field{width:100%;border:2px solid #d4d4d8;border-radius:12px;padding:8px 10px;font:inherit;background:#fff;color:#18181b;resize:none}
+.vp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.vp-chip{min-height:38px;padding:0 10px;border-radius:19px;border:2px solid #d4d4d8;background:#fff;font:inherit;font-weight:700;cursor:pointer;color:#18181b}
+.vp-menu{display:grid;gap:10px;padding:12px}
+.vp-menu button{min-height:72px;border-radius:18px;border:0;background:#fff;font:inherit;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 14px;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.08);color:#18181b}
+.vp-menu i{font-style:normal;font-size:30px}
+.vp-menu small{display:block;color:#71717a}
+.vp-pill{display:inline-block;border-radius:10px;padding:0 7px;color:#fff;font-weight:800;font-size:.8em}
+.vp-mini{min-height:34px;padding:0 10px;border-radius:10px;border:1px solid #d4d4d8;background:#fff;font:inherit;font-size:.85em;font-weight:700;cursor:pointer;color:#18181b}
+.vp-mini.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.vp-k-opt{min-height:58px;border-radius:12px;border:2px solid #e4e4e7;background:#fff;font:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px;text-align:left;color:#18181b}
+.vp-k-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vp-k-grid .vp-k-opt{flex-direction:column;text-align:center;justify-content:center}
+.vp-k-opt em{font-style:normal;font-size:26px}
+.vp-k-opt small{display:block;color:#71717a;font-size:.8em}
+.vp-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.vp-keys button{min-height:46px;border-radius:10px;border:0;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);font:inherit;font-size:1.2em;font-weight:800;cursor:pointer;color:#18181b}
+.vp-qrposter{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.vp-qrposter button{border:0;border-radius:12px;background:#fff;padding:8px 4px;font:inherit;font-size:.8em;font-weight:700;cursor:pointer;display:grid;gap:4px;justify-items:center;color:#18181b}
+.vp-qrposter b{font-size:30px;line-height:1}
 @media (prefers-reduced-motion:reduce){.vp-target,.vp-heads,.vp-flash{animation:none}}
 `;
 
@@ -243,17 +302,21 @@ export class VirtualPhone {
   private guide: PhoneGuide | null = null;
   private guideIndex = 0;
   private blockedHosts = new Set<string>();
+  private apps: PhoneApp[];
+  private drafts: Record<string, string> = {};
 
   constructor(
     root: HTMLElement,
     opts: {
       analyze: (text: string) => Analysis;
       onEvent?: (e: PhoneEvent) => void;
+      apps?: PhoneApp[];
     },
   ) {
     this.root = root;
     this.analyze = opts.analyze;
     this.onEvent = opts.onEvent ?? (() => undefined);
+    this.apps = opts.apps ?? [];
     if (!document.getElementById(STYLE_ID)) {
       const style = document.createElement('style');
       style.id = STYLE_ID;
@@ -261,11 +324,18 @@ export class VirtualPhone {
       document.head.appendChild(style);
     }
     this.root.addEventListener('click', this.handleClick);
+    this.root.addEventListener('input', this.handleInput);
+    this.render();
+  }
+
+  /** 바깥에서 설치 앱의 자료가 바뀌었을 때 화면을 다시 그린다. */
+  refresh() {
     this.render();
   }
 
   destroy() {
     this.root.removeEventListener('click', this.handleClick);
+    this.root.removeEventListener('input', this.handleInput);
     if (this.headsTimer) clearTimeout(this.headsTimer);
     this.root.innerHTML = '';
   }
@@ -351,6 +421,28 @@ export class VirtualPhone {
     this.push({ id: 'browser', host });
   }
 
+  /** 입력칸은 다시 그려도 글이 지워지지 않도록 값을 따로 기억한다. */
+  private handleInput = (e: Event) => {
+    const el = e.target as HTMLInputElement | HTMLTextAreaElement;
+    if (el.dataset?.model) this.drafts[el.dataset.model] = el.value;
+  };
+
+  private appContext(appId: string): PhoneAppContext {
+    return {
+      push: (view, data = '') =>
+        this.push({ id: 'ext', app: appId, view, data }),
+      back: () => this.back(),
+      toast: (text) => this.toast(text),
+      startGuide: (guide) => {
+        this.guide = guide;
+        this.guideIndex = 0;
+        this.overlay = null;
+        this.stack = [{ id: 'home' }];
+      },
+      drafts: this.drafts,
+    };
+  }
+
   private handleClick = (e: Event) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
     if (!el || !this.root.contains(el)) return;
@@ -379,9 +471,16 @@ export class VirtualPhone {
 
   /** 동작을 실행한다. 실패해서 안내 단계를 넘기면 안 되면 false를 돌려준다. */
   private run(act: string, arg: string): boolean | void {
+    if (act.startsWith('x:')) {
+      const [, appId, action] = act.split(':');
+      const app = this.apps.find((a) => a.id === appId);
+      return app?.handle(action, arg, this.appContext(appId));
+    }
     switch (act) {
       case 'back':
         return this.back();
+      case 'open-ext':
+        return this.push({ id: 'ext', app: arg, view: 'main', data: '' });
       case 'home':
         this.overlay = null;
         this.stack = [{ id: 'home' }];
@@ -555,7 +654,12 @@ export class VirtualPhone {
           wall: true,
           dark: true,
           html: `<div class="vp-clockw"><b>10:30</b>10월 29일 목요일 · ☀️ 18°</div>
-            <div class="vp-grid">${APPS.slice(3).map(app).join('')}</div>
+            <div class="vp-grid">${this.apps
+              .map(
+                (a) =>
+                  `<button class="vp-app" data-act="open-ext" data-arg="${a.id}" ${this.g(`home:${a.id}`)}><i style="background:${a.bg}">${a.icon}</i>${esc(a.label)}</button>`,
+              )
+              .join('')}${APPS.slice(3).map(app).join('')}</div>
             <div class="vp-dock">${APPS.slice(0, 3).map(app).join('')}</div>`,
         };
       }
@@ -759,6 +863,11 @@ export class VirtualPhone {
         return {
           html: `<div class="vp-url">🔒 ${esc(s.host)}</div><div class="vp-web"><b>${esc(s.host)}</b><p>연습용 인터넷 화면이에요. 실제 사이트는 열리지 않아요.</p></div>`,
         };
+      case 'ext': {
+        const app = this.apps.find((a) => a.id === s.app);
+        if (!app) return { html: '' };
+        return app.render(s.view, s.data, this.appContext(s.app));
+      }
       case 'installer':
         return {
           html: `${this.bar('앱 설치')}<div class="vp-preview">📦 <b>보안인증.apk</b><br>이 앱을 설치하시겠습니까?</div><div class="vp-foot"><button class="vp-btn">설치</button></div>`,

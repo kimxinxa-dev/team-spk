@@ -1,0 +1,215 @@
+<title>안심 지킴이 시뮬레이션</title>
+<style>
+  /* layout: 가운데 큰 휴대폰이 주인공, 왼쪽에 작은 '문자 받기' 조작판. 좁은 화면에서는 조작판이 휴대폰 위로 간다 */
+  :root {
+    --bg: #e9edf5;
+    --surface: #ffffff;
+    --fg: #18181b;
+    --muted: #52525b;
+    --line: #d4d4d8;
+    --brand: #1d4ed8;
+    --font:
+      'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui,
+      sans-serif;
+    --display:
+      'Gowun Dodum', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0d1118;
+      --surface: #171d29;
+      --fg: #e9edf5;
+      --muted: #a1a8b8;
+      --line: #2f3747;
+      --brand: #7aa2ff;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #0d1118;
+    --surface: #171d29;
+    --fg: #e9edf5;
+    --muted: #a1a8b8;
+    --line: #2f3747;
+    --brand: #7aa2ff;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    word-break: keep-all;
+  }
+  .stage {
+    max-width: 820px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 18px 40px;
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 640px) {
+    .stage {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .ctrl {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    display: grid;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .ctrl h1 {
+    font-family: var(--display);
+    font-size: 1.05rem;
+    margin: 0;
+  }
+  .ctrl p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .ctrl select,
+  .ctrl textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--fg);
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 6px 8px;
+  }
+  .ctrl label {
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .recv {
+    min-height: 46px;
+    border-radius: 12px;
+    border: 0;
+    background: var(--brand);
+    color: #fff;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .recv:active {
+    transform: scale(0.98);
+  }
+  .phonebox {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    --vp-max: 380px;
+  }
+  .hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  :focus-visible {
+    outline: 3px solid var(--brand);
+    outline-offset: 2px;
+  }
+</style>
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;700;800&display=swap"
+/>
+
+<div class="stage">
+  <aside class="ctrl" aria-label="문자 받기">
+    <h1>📩 문자 받기</h1>
+    <p>원할 때 눌러서 휴대폰에 문자를 보내요.</p>
+    <label for="sample">어떤 문자?</label>
+    <select id="sample"></select>
+    <textarea
+      id="custom"
+      rows="2"
+      maxlength="500"
+      placeholder="또는 직접 쓰기"
+      aria-label="직접 쓴 문자"
+    ></textarea>
+    <button class="recv" id="recv">문자 받기</button>
+  </aside>
+  <main class="phonebox">
+    <div
+      id="phone"
+      style="width: 100%; display: grid; justify-items: center"
+    ></div>
+    <p class="hint">
+      휴대폰을 자유롭게 눌러 보세요. 홈 화면의 🛡️ <b>안심 지킴이</b> 앱에 문자
+      지킴이·QR 검사·말로 물어보기·키오스크 연습이 들어 있어요.
+    </p>
+  </main>
+</div>
+
+<script>
+  /*SIM*/
+</script>
+<script>
+  function speak(t) {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = 'ko-KR';
+      u.rate = 0.9;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  let currentGuide = null;
+  const guardian = Sim.createGuardianApp({
+    analyzeMessage: (t, p) => Sim.analyzeScan('MESSAGE', t, p),
+    analyzeQr: (t) => Sim.analyzeScan('QR', t),
+    guides: Sim.GUIDES,
+    matchGuides: Sim.matchGuides,
+    scenarios: Sim.SCENARIOS,
+    tipFor: Sim.tipFor,
+    onGuide: (g) => {
+      currentGuide = g;
+      speak(g.steps[0].instruction);
+    },
+  });
+  const phone = new Sim.VirtualPhone(document.getElementById('phone'), {
+    apps: [guardian.app],
+    analyze: (t) => Sim.analyzeScan('MESSAGE', t, guardian.personal()),
+    onEvent: (e) => {
+      if (e.type === 'message-checked')
+        guardian.record(
+          e.message.app === 'sms' ? '문자' : '메신저',
+          e.message.text,
+          e.result,
+        );
+      if (e.type === 'guide-step' && currentGuide)
+        speak(currentGuide.steps[e.index].instruction);
+      if (e.type === 'guide-done') speak('끝까지 해냈어요! 정말 잘하셨어요.');
+    },
+  });
+  guardian.setRefresh(() => phone.refresh());
+  const sel = document.getElementById('sample');
+  sel.innerHTML = Sim.DEMO_SAMPLES.map(
+    (s) => `<option value="${s.id}">${s.label}</option>`,
+  ).join('');
+  document.getElementById('recv').onclick = () => {
+    const custom = document.getElementById('custom').value.trim();
+    const s = Sim.DEMO_SAMPLES.find((x) => x.id === sel.value);
+    if (custom)
+      phone.receiveMessage({ app: 'sms', from: '모르는 번호', text: custom });
+    else
+      phone.receiveMessage({
+        app: s.app === '문자' ? 'sms' : 'messenger',
+        from: s.sender,
+        text: s.content,
+      });
+  };
+</script>

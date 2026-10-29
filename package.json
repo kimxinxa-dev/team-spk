@@ -25,7 +25,8 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:check": "tsx scripts/check-db.ts"
+    "db:check": "tsx scripts/check-db.ts",
+    "demo:build": "node demo/build.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.0",
@@ -48,6 +49,7 @@
     "@types/pg": "^8.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.4.3",
     "eslint-config-prettier": "^10.0.0",

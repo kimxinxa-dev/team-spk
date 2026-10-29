@@ -44,3 +44,6 @@ next-env.d.ts
 !.env.example
 /src/generated_prisma/
 *.log
+
+# 시뮬레이션 빌드 결과
+/demo/dist
