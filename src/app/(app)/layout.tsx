@@ -8,7 +8,7 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
     <div className="flex min-h-full flex-1 flex-col">
       <header className="border-b-2 border-zinc-200 bg-white">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-5 py-3">
-          <Link href="/check" className="text-xl font-bold text-blue-700">
+          <Link href="/home" className="text-xl font-bold text-blue-700">
             안심 지킴이
           </Link>
           <form action={signOut}>

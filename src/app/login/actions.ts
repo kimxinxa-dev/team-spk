@@ -48,7 +48,7 @@ export async function signIn(
     console.error('[signIn] app user upsert failed');
     return FAILED_RESULT;
   }
-  redirect('/check');
+  redirect('/home');
 }
 
 export async function signUp(
@@ -84,7 +84,7 @@ export async function signUp(
     console.error('[signUp] app user upsert failed');
     return FAILED_RESULT;
   }
-  redirect('/check');
+  redirect('/home');
 }
 
 export async function signOut() {

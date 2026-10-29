@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /** 로그인해야 열리는 화면 */
-const PROTECTED_PATHS = ['/check', '/qr', '/contacts'];
+const PROTECTED_PATHS = ['/home', '/check', '/ask', '/kiosk', '/contacts'];
 
 /**
  * 요청마다 Supabase 로그인 세션을 갱신하고, 로그인하지 않은 사람이 보호된 화면을 열면 로그인 화면으로 보낸다.

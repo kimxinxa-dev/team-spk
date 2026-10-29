@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const ITEMS = [
-  { href: '/check', label: '문자 검사', icon: '💬' },
-  { href: '/qr', label: 'QR 검사', icon: '📷' },
+  { href: '/home', label: '홈', icon: '🏠' },
+  { href: '/check', label: '문자 지킴이', icon: '🛡️' },
+  { href: '/ask', label: '말로 묻기', icon: '🎤' },
+  { href: '/kiosk', label: '키오스크', icon: '🍽️' },
   { href: '/contacts', label: '연락처', icon: '👨‍👩‍👧' },
 ] as const;
 
@@ -17,7 +19,7 @@ export function AppNav() {
       aria-label="주요 메뉴"
       className="fixed inset-x-0 bottom-0 border-t-2 border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="mx-auto grid max-w-3xl grid-cols-3">
+      <ul className="mx-auto grid max-w-3xl grid-cols-5">
         {ITEMS.map((item) => {
           const active = pathname === item.href;
           return (
@@ -25,7 +27,7 @@ export function AppNav() {
               <Link
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-18 flex-col items-center justify-center gap-1 text-lg font-semibold ${
+                className={`flex min-h-18 flex-col items-center justify-center gap-1 text-sm font-semibold sm:text-base ${
                   active ? 'text-blue-700' : 'text-zinc-600'
                 }`}
               >

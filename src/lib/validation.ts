@@ -69,3 +69,56 @@ export const contactSchema = z.object({
 });
 
 export type ContactInput = z.input<typeof contactSchema>;
+
+// ---- 말로 물어보기·키오스크 연습·문자 지킴이 피드백 ----
+
+/** 배움 노트·연습 기록은 [더 보기]마다 이만큼씩 나눠 읽는다. */
+export const LIST_PAGE_SIZE = 10;
+
+export const requestIdSchema = z.uuid('잘못된 요청입니다.');
+export const offsetSchema = z.number().int().min(0).max(10_000);
+export const memoTextSchema = z
+  .string()
+  .trim()
+  .max(MEMO_MAX, `메모는 ${MEMO_MAX}자까지 쓸 수 있습니다.`);
+
+export const verdictSchema = z.object({
+  id: z.uuid('잘못된 기록입니다.'),
+  verdict: z.enum(['SCAM', 'SAFE', 'NONE'], '정답을 골라 주세요.'),
+});
+
+export const demoScanSchema = z.object({
+  sampleId: z.string().min(1).max(20),
+});
+
+export const guideSaveSchema = z.object({
+  guideKey: z.string().min(1).max(40),
+  question: z
+    .string()
+    .trim()
+    .min(2, '질문을 두 글자 이상 넣어 주세요.')
+    .max(200),
+  requestId: requestIdSchema,
+});
+
+export const guideRenameSchema = z.object({
+  id: z.uuid('잘못된 요청입니다.'),
+  title: z
+    .string()
+    .trim()
+    .min(1, '제목을 넣어 주세요.')
+    .max(40, '제목은 40자까지 쓸 수 있습니다.'),
+});
+
+export const kioskSaveSchema = z.object({
+  kioskType: z.enum(['restaurant', 'hospital', 'train']),
+  durationSec: z.number().int().min(1).max(7200),
+  mistakes: z.number().int().min(0).max(500),
+  stuckStep: z.string().max(30).nullable(),
+  requestId: requestIdSchema,
+});
+
+export const kioskMemoSchema = z.object({
+  id: z.uuid('잘못된 요청입니다.'),
+  memo: memoTextSchema,
+});

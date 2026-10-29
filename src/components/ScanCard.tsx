@@ -1,7 +1,11 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { deleteScan, updateScanMemo } from '@/app/(app)/scan-actions';
+import {
+  deleteScan,
+  updateScanMemo,
+  updateScanVerdict,
+} from '@/app/(app)/scan-actions';
 import { FieldError, FormStatus, SubmitButton } from '@/components/form';
 import { RiskBadge } from '@/components/RiskBadge';
 import { INITIAL_RESULT } from '@/lib/action-result';
@@ -13,6 +17,8 @@ export type ScanCardData = {
   sourceLabel: string;
   content: string;
   riskLevel: Risk;
+  score: number;
+  userVerdict: string | null;
   reasons: string[];
   aiSummary: string | null;
   memo: string | null;
@@ -34,12 +40,21 @@ export function ScanCard({ scan }: { scan: ScanCardData }) {
     deleteScan,
     INITIAL_RESULT,
   );
+  const [verdictResult, verdictAction, verdictPending] = useActionState(
+    updateScanVerdict,
+    INITIAL_RESULT,
+  );
   const memoId = `memo-${scan.id}`;
 
   return (
     <article className="rounded-2xl border-2 border-zinc-200 bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <RiskBadge level={scan.riskLevel} />
+        <span className="flex items-center gap-2">
+          <RiskBadge level={scan.riskLevel} />
+          <span className="text-lg font-bold text-zinc-800">
+            {scan.score}점
+          </span>
+        </span>
         <p className="text-base text-zinc-600">
           {scan.sourceLabel} · {scan.createdAtText}
         </p>
@@ -62,6 +77,43 @@ export function ScanCard({ scan }: { scan: ScanCardData }) {
           {scan.aiSummary}
         </p>
       )}
+
+      {/* 사용자가 알려 준 정답은 이 사람의 다음 검사를 맞춤 판단하는 학습 데이터가 된다 */}
+      <form action={verdictAction} className="mt-4">
+        <input type="hidden" name="id" value={scan.id} />
+        <fieldset disabled={verdictPending}>
+          <legend className="text-base font-semibold text-zinc-700">
+            이 문자, 실제로 사기였나요?
+          </legend>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {(
+              [
+                ['SCAM', '사기 맞아요'],
+                ['SAFE', '아니에요'],
+                ['NONE', '모르겠어요'],
+              ] as const
+            ).map(([value, label]) => {
+              const selected = (scan.userVerdict ?? 'NONE') === value;
+              return (
+                <button
+                  key={value}
+                  type="submit"
+                  name="verdict"
+                  value={value}
+                  aria-pressed={selected}
+                  className={`min-h-12 rounded-xl border-2 text-base font-semibold ${
+                    selected
+                      ? 'border-blue-700 bg-blue-700 text-white'
+                      : 'border-zinc-300 bg-white text-zinc-800'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+      </form>
 
       {editing ? (
         <form action={memoAction} className="mt-4 space-y-3">
@@ -122,6 +174,7 @@ export function ScanCard({ scan }: { scan: ScanCardData }) {
         </>
       )}
       <div className="mt-3 space-y-2">
+        <FormStatus result={verdictResult} />
         <FormStatus result={memoResult} />
         {!deleteResult.ok && <FormStatus result={deleteResult} />}
       </div>

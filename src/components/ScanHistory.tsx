@@ -12,7 +12,7 @@ const SOURCE_LABEL: Record<ScanSource, string> = {
 };
 
 /** 내 검사 기록 목록(서버에서 로그인 확인 후 내 자료만 읽는다). Suspense 안에서 쓴다. */
-export async function ScanHistory({ kind }: { kind: ScanKind }) {
+export async function ScanHistory({ kind }: { kind?: ScanKind }) {
   const user = await requireUser();
   const scans = await listScans(user.id, kind);
 
@@ -34,6 +34,8 @@ export async function ScanHistory({ kind }: { kind: ScanKind }) {
               sourceLabel: SOURCE_LABEL[scan.source],
               content: scan.content,
               riskLevel: scan.riskLevel,
+              score: scan.score,
+              userVerdict: scan.userVerdict,
               reasons: scan.reasons,
               aiSummary: scan.aiSummary,
               memo: scan.memo,

@@ -16,8 +16,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  scans    ScanRecord[]
-  contacts Contact[]
+  scans         ScanRecord[]
+  contacts      Contact[]
+  guideNotes    GuideNote[]
+  kioskSessions KioskSession[]
 
   @@map("users")
 }
@@ -57,6 +59,10 @@ model ScanRecord {
   reasons   String[]
   /// AI 분석 설명. AI 기능을 연결하기 전에는 비어 있다.
   aiSummary String?
+  /// 학습 AI와 규칙 검사를 합친 위험 점수(0~100)
+  score       Int      @default(0)
+  /// 사용자가 알려 준 정답(SCAM: 사기 맞음, SAFE: 사기 아님). 이 사람의 다음 검사를 맞춤 판단하는 학습 데이터로 쓴다.
+  userVerdict String?
   /// 사용자가 남기는 메모(예: "은행에 전화해 확인함")
   memo      String?
   createdAt DateTime   @default(now())
@@ -65,7 +71,52 @@ model ScanRecord {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, kind, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("scan_records")
+}
+
+/// 말로 물어보기에서 저장한 배움 노트. 주요 기능 2. 안내 단계는 코드의 안내 목록(guideKey)에서 가져온다.
+model GuideNote {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  guideKey        String
+  title           String
+  question        String
+  /// 연습을 끝낸 횟수. 동시에 눌러도 틀리지 않게 DB에서 1씩 올린다.
+  practiceCount   Int      @default(0)
+  /// 같은 저장 요청이 두 번 와도 한 번만 저장하기 위한 요청 번호
+  clientRequestId String   @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientRequestId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("guide_notes")
+}
+
+/// 키오스크 연습 기록. 주요 기능 3.
+model KioskSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  /// restaurant(음식점) | hospital(병원) | train(기차역)
+  kioskType       String
+  /// 연습에 걸린 시간(초)
+  durationSec     Int
+  mistakes        Int
+  /// 가장 많이 틀린 단계 이름
+  stuckStep       String?
+  memo            String?
+  clientRequestId String   @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientRequestId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("kiosk_sessions")
 }
 
 /// 보호자·연락처. 주요 기능 3. 음성 도우미의 "○○한테 전화"와 위험 알림이 이 목록을 쓴다.

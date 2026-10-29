@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useActionState, useRef } from 'react';
 import { createMessageScan } from '../scan-actions';
 import { FieldError, FormStatus, SubmitButton } from '@/components/form';
@@ -14,6 +15,12 @@ const SOURCES = [
 
 export function MessageCheckForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  // 문자 앱의 [공유] → 안심 지킴이로 들어오면 받은 글을 미리 넣어 둔다.
+  const params = useSearchParams();
+  const shared = [params.get('title'), params.get('text'), params.get('url')]
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, MESSAGE_MAX);
   const [result, action] = useActionState(
     async (prev: ActionResult, formData: FormData) => {
       const next = await createMessageScan(prev, formData);
@@ -56,6 +63,7 @@ export function MessageCheckForm() {
           name="content"
           rows={6}
           maxLength={MESSAGE_MAX}
+          defaultValue={shared}
           required
           placeholder="예: [CJ대한통운] 주소지 불일치로 배송이 보류되었습니다. 주소 확인 bit.ly/..."
           aria-describedby="content-error"
