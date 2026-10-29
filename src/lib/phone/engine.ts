@@ -13,11 +13,10 @@ export type IncomingMessage = {
   text: string;
 };
 
-export type PhoneEvent = {
-  type: 'message-checked';
-  message: IncomingMessage;
-  result: Analysis;
-};
+export type PhoneEvent =
+  | { type: 'message-checked'; message: IncomingMessage; result: Analysis }
+  /** 휴대폰 화면이 다른 앱·화면으로 바뀌었을 때(예: 'camera', 'home') */
+  | { type: 'screen'; screen: string };
 
 type Screen =
   | { id: 'home' }
@@ -434,7 +433,6 @@ const CSS = `
 .vp-zoom span.on{background:rgba(255,255,255,.3);color:#fcd34d;font-size:12.5px}
 .vp-modes{flex:none;display:flex;justify-content:center;gap:18px;padding:6px 0;background:#000;color:#9ca3af;font-size:.85em;font-weight:700}
 .vp-modes .on{color:#fcd34d}
-.vp-askopen{border:0;background:none;color:#6b7280;font:inherit;font-size:.85em;font-weight:700;text-decoration:underline;cursor:pointer;padding:6px;justify-self:center}
 .vp-blockln{display:grid;gap:2px;border:2px solid;border-radius:14px;padding:10px 12px}
 .vp-blockln b{font-size:1.05em}
 .vp-blockln span{font-size:.85em;font-weight:700;word-break:break-all;opacity:.85}
@@ -638,6 +636,8 @@ export class VirtualPhone {
   private drafts: Record<string, string> = {};
   private clipboard = '';
   private qr: CameraQr | null = null;
+  /** 처음 화면은 홈이라 처음 그릴 때는 알리지 않는다(페이지 준비 전에 알림이 가지 않게) */
+  private lastScreen = 'home';
   /** 카메라에 비춰진 QR(무작위), 판독했는지, 그 화면(판독은 셔터를 누를 때 한 번만) */
   private camQr: { index: number; judged: boolean; html: string } | null = null;
 
@@ -675,6 +675,15 @@ export class VirtualPhone {
   }
 
   // ---------- 바깥에서 쓰는 기능 ----------
+  /** 카메라 앱에 이 체험용 QR을 비춘다(판독은 셔터를 눌러서). 카메라가 아니면 카메라를 연다. */
+  showQr(index: number) {
+    if (!this.qr || index < 0 || index >= this.qr.count) return;
+    if (this.top.id !== 'camera') this.push({ id: 'camera' });
+    this.overlay = null;
+    this.camQr = { index, judged: false, html: this.qr.preview(index) };
+    this.render();
+  }
+
   receiveMessage(msg: IncomingMessage) {
     const result = this.analyze(msg.text);
     if (msg.app === 'sms') {
@@ -937,9 +946,6 @@ export class VirtualPhone {
       case 'qr-ask':
         this.overlay = { kind: 'qr-confirm', content: arg };
         return;
-      case 'qr-next':
-        this.overlay = null;
-        return this.aimQr();
       case 'ov-view': {
         const ov = this.overlay;
         this.overlay = null;
@@ -1338,8 +1344,7 @@ export class VirtualPhone {
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
         <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>${ov.result.riskLevel === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(hostOf(ov.content))}</span>${reasonList(ov.result.reasons)}</div>
         <div class="tip">${esc(ov.place)}에 붙어 있던 QR이에요.</div>
-        <div class="btns"><button data-act="qr-next">다른 QR 비추기</button><button class="main" data-act="ov-close">알겠어요</button></div>
-        ${ov.result.riskLevel === 'CAUTION' && /^https?:\/\//i.test(ov.content) ? `<button class="vp-askopen" data-act="qr-ask" data-arg="${esc(ov.content)}">그래도 열기</button>` : ''}</div></div>`;
+        <div class="btns"><button data-act="${ov.result.riskLevel === 'CAUTION' ? 'qr-ask' : 'qr-open'}" data-arg="${esc(ov.content)}">링크 열기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
     }
     if (ov.kind === 'qr-confirm') {
       return `<div class="vp-ov" role="alertdialog" aria-label="정말 이 주소를 여시겠어요?"><div class="vp-pop" style="color:#18181b">
@@ -1360,6 +1365,10 @@ export class VirtualPhone {
 
   private render() {
     const s = this.top;
+    if (s.id !== this.lastScreen) {
+      this.lastScreen = s.id;
+      this.onEvent({ type: 'screen', screen: s.id });
+    }
     const { html, dark, wall } = this.screenHtml(s);
     const status = `<div class="vp-status"><span>10:30</span><span class="r">${this.wifiConnected ? PHONE_ICONS.wifi : '<b style="font-size:10px">LTE</b>'}${SIGNAL}${BATTERY}</span></div>`;
     const h = this.heads;

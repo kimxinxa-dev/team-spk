@@ -128,10 +128,10 @@
 />
 
 <div class="stage">
-  <aside class="ctrl" aria-label="문자 받기">
-    <h1>📩 문자 받기</h1>
-    <p>원할 때 눌러서 휴대폰에 문자를 보내요.</p>
-    <label for="sample">어떤 문자?</label>
+  <aside class="ctrl" id="ctrl" aria-label="문자 받기">
+    <h1 id="ctrl-title">📩 문자 받기</h1>
+    <p id="ctrl-desc">원할 때 눌러서 휴대폰에 문자를 보내요.</p>
+    <label for="sample" id="ctrl-label">어떤 문자?</label>
     <select id="sample"></select>
     <textarea
       id="custom"
@@ -148,7 +148,8 @@
       style="width: 100%; display: grid; justify-items: center"
     ></div>
     <p class="hint">
-      휴대폰을 자유롭게 쓰다가 왼쪽 [문자 받기]를 눌러 보세요. 홈 화면의 🛡️
+      휴대폰을 자유롭게 쓰다가 왼쪽 [문자 받기]를 눌러 보세요. 카메라 앱에서는
+      [QR 코드 받기]로 바뀌어요. 홈 화면의 🛡️
       <b>안심 지킴이</b> 앱에서 실시간 감지 기록·QR 검사·붙여 넣어 검사를 할 수
       있어요.
     </p>
@@ -172,6 +173,7 @@
     },
     analyze: (t) => Sim.analyzeScan('MESSAGE', t, guardian.personal()),
     onEvent: (e) => {
+      if (e.type === 'screen') setPanel(e.screen === 'camera' ? 'qr' : 'sms');
       if (e.type === 'message-checked')
         guardian.record(
           e.message.app === 'sms' ? '문자' : '메신저',
@@ -181,10 +183,41 @@
     },
   });
   const sel = document.getElementById('sample');
+  // 조작판: 카메라 앱에 있으면 "QR 코드 받기", 그 밖에는 "문자 받기"
+  let panel = 'sms';
+  function setPanel(mode) {
+    if (mode === panel) return;
+    panel = mode;
+    const qr = mode === 'qr';
+    document
+      .getElementById('ctrl')
+      .setAttribute('aria-label', qr ? 'QR 코드 받기' : '문자 받기');
+    document.getElementById('ctrl-title').textContent = qr
+      ? '▦ QR 코드 받기'
+      : '📩 문자 받기';
+    document.getElementById('ctrl-desc').textContent = qr
+      ? '카메라에 비출 QR을 골라 보내요. 셔터를 누르면 판독해요.'
+      : '원할 때 눌러서 휴대폰에 문자를 보내요.';
+    document.getElementById('ctrl-label').textContent = qr
+      ? '어떤 QR?'
+      : '어떤 문자?';
+    document.getElementById('custom').hidden = qr;
+    document.getElementById('recv').textContent = qr
+      ? 'QR 코드 받기'
+      : '문자 받기';
+    sel.innerHTML = qr
+      ? guardian.qrLabels
+          .map((l, i) => `<option value="${i}">${l}</option>`)
+          .join('')
+      : Sim.DEMO_SAMPLES.map(
+          (s) => `<option value="${s.id}">${s.label}</option>`,
+        ).join('');
+  }
   sel.innerHTML = Sim.DEMO_SAMPLES.map(
     (s) => `<option value="${s.id}">${s.label}</option>`,
   ).join('');
   document.getElementById('recv').onclick = () => {
+    if (panel === 'qr') return phone.showQr(Number(sel.value));
     const custom = document.getElementById('custom').value.trim();
     const s = Sim.DEMO_SAMPLES.find((x) => x.id === sel.value);
     if (custom)

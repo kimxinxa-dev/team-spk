@@ -366,6 +366,8 @@ export function createGuardianApp(opts: {
     app,
     /** 휴대폰 카메라에 무작위로 비출 수 있는 체험용 QR 수 */
     qrCount: DEMO_QR_CODES.length,
+    /** 시뮬레이션 조작판의 [QR 코드 받기] 고르기 목록 */
+    qrLabels: DEMO_QR_CODES.map((q) => `${q.place} · ${q.title}`),
     /** 카메라에 QR이 비춰진 화면(아직 판독 전, 검은 화면+격자) */
     qrPreview(index: number) {
       const q = DEMO_QR_CODES[index];
