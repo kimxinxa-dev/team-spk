@@ -17,7 +17,21 @@ type Rec = {
   text: string;
   result: Analysis;
   verdict: 'SCAM' | 'SAFE' | null;
+  /** QR 판독이 주의·위험이라 그 주소를 막았는지 */
+  blocked?: boolean;
 };
+
+/** QR 안의 주소에서 사이트 이름(도메인)만 꺼낸다. 주소가 아니면 그대로. */
+function siteOf(raw: string) {
+  try {
+    return new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `http://${raw}`)
+      .hostname;
+  } catch {
+    return raw;
+  }
+}
+/** 안전할 때만 열 수 있는 인터넷 주소인지 */
+const isWebLink = (raw: string) => /^https?:\/\//i.test(raw);
 
 const COLOR: Record<string, string> = {
   DANGER: '#dc2626',
@@ -123,6 +137,10 @@ const QR_STYLE = `<style>
 .gq-hero b{font-size:1.25em}
 .gq-hero span{font-size:.92em;color:#3f3f46;max-width:28ch}
 .gq-sec{margin:12px 14px 6px;font-size:.8em;font-weight:700;color:#52525b;display:flex;justify-content:space-between;gap:8px}
+.gq-block{margin:12px 14px 0;display:grid;gap:2px;border:2px solid;border-radius:14px;padding:10px 12px}
+.gq-block b{font-size:1.02em}
+.gq-block span{font-size:.82em;font-weight:700;word-break:break-all;opacity:.85}
+.gq-open{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);border:0;border-radius:999px;background:#fff;color:#1d4ed8;font:inherit;font-size:13px;font-weight:800;padding:8px 16px;cursor:pointer;animation:gq-show .25s .9s both}
 .gq-msg{margin:0 14px;background:#f4f4f5;border-radius:6px 16px 16px 16px;padding:10px 12px;font-size:.88em;word-break:break-all}
 .gq-tags{margin:0 14px;display:flex;flex-wrap:wrap;gap:6px}
 .gq-tags span{padding:4px 10px;border-radius:999px;font-size:.82em;font-weight:700}
@@ -179,7 +197,7 @@ export function createGuardianApp(opts: {
 
   function card(r: Rec, full: boolean) {
     return `<div class="vp-card ${r.result.riskLevel}">
-      <span><span class="vp-pill" style="background:${COLOR[r.result.riskLevel]}">${LABEL[r.result.riskLevel]} · 위험도 ${r.result.score}%</span> <small style="color:#6b7280">${esc(r.source)}</small></span>
+      <span><span class="vp-pill" style="background:${COLOR[r.result.riskLevel]}">${LABEL[r.result.riskLevel]} · 위험도 ${r.result.score}%</span> <small style="color:#6b7280">${esc(r.source)}</small>${r.blocked ? ' <small style="color:#b91c1c;font-weight:800">🔒 링크 차단</small>' : ''}</span>
       <span style="word-break:break-all">${esc(r.text.length > 80 && !full ? `${r.text.slice(0, 80)}…` : r.text)}</span>
       <ul style="margin:0;padding-left:16px;font-size:.9em">${r.result.reasons
         .slice(0, full ? 5 : 2)
@@ -202,9 +220,10 @@ export function createGuardianApp(opts: {
       ? `<div class="gq-cover"><div class="gq-sheet" role="alertdialog" aria-label="${QR_TEXT[lv].title}">
           <div class="gq-hero" style="background:${t.tint}"><span class="gq-ico" style="background:${t.solid}"><svg viewBox="0 0 24 24" aria-hidden="true">${GLYPH[lv]}</svg></span>
             <small style="color:${t.word}">${LABEL[lv]} · 위험도 ${r.result.score}%</small><b>${QR_TEXT[lv].title}</b><span>${QR_TEXT[lv].advice}</span></div>
+          ${lv !== 'SAFE' ? `<div class="gq-block" style="background:${t.tint};border-color:${t.solid};color:${t.word}"><b>🔒 링크 접속을 차단했어요</b><span>${esc(siteOf(q.content))}</span></div>` : ''}
           <div class="gq-sec"><span>찍은 QR 내용</span><span>${esc(q.place)}</span></div><div class="gq-msg">${esc(q.content)}</div>
           ${r.result.reasons.length ? `<div class="gq-sec"><span>왜 그런가요?</span></div><div class="gq-tags">${r.result.reasons.map((x) => `<span style="${t.tag}">${esc(x)}</span>`).join('')}</div>` : ''}
-          <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button><button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
+          <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button>${lv === 'SAFE' && isWebLink(q.content) ? `<button style="background:none;color:#1d4ed8" data-act="qr-open" data-arg="${esc(q.content)}">이 주소 열기</button>` : ''}<button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
         </div></div>`
       : '';
     // 카메라에서 위험·주의는 경고 팝업이 알리므로 주소 표시는 색을 바꾸지 않는다(정상만 초록).
@@ -220,6 +239,7 @@ export function createGuardianApp(opts: {
         <div class="gq-float"><div class="gq-board"><p>${esc(q.place)}</p><b>${esc(q.title)}</b>${demoQrSvg(q.content)}</div></div>
         <span class="gq-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
         <span class="gq-chip" role="status"><span class="lb"><b class="a">판독 중…</b><b class="b">${chipLabel}</b></span><span class="u">${esc(q.content)}</span></span>
+        ${camera && lv === 'SAFE' && isWebLink(q.content) ? `<button class="gq-open" data-act="qr-open" data-arg="${esc(q.content)}">이 주소 열기</button>` : ''}
         ${sheet}
       </div>`;
   }
@@ -330,6 +350,10 @@ export function createGuardianApp(opts: {
           const q = DEMO_QR_CODES[Number(arg)];
           if (!q) return;
           const r = add('QR 코드', q.content, opts.analyzeQr(q.content));
+          if (r.result.riskLevel !== 'SAFE') {
+            r.blocked = true;
+            ctx.blockLink(q.content);
+          }
           return ctx.push('qrscan', `${r.id}:${arg}`);
         }
       }
@@ -355,6 +379,8 @@ export function createGuardianApp(opts: {
       const q = DEMO_QR_CODES[index];
       if (!q) return null;
       const r = add('카메라 QR', q.content, opts.analyzeQr(q.content));
+      // 주소를 막는 일은 카메라(엔진)가 맡는다. 기록에는 막았다고 남긴다.
+      if (r.result.riskLevel !== 'SAFE') r.blocked = true;
       return {
         html: qrScanView(r, index, false, true),
         result: r.result,

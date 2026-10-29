@@ -40,6 +40,16 @@ const RESULT_TEXT: VerdictText = {
 };
 
 /** 안전하다고 나온 인터넷 주소만 열 수 있게 한다(열기 전에 꼭 검사를 거친다). */
+/** QR 안의 주소에서 사이트 이름(도메인)만 꺼낸다. 주소가 아니면 null. */
+function siteOf(content: string) {
+  try {
+    const url = new URL(content);
+    return ['http:', 'https:'].includes(url.protocol) ? url.hostname : null;
+  } catch {
+    return null;
+  }
+}
+
 function safeLink(content: string, result: CheckResult | null) {
   if (!result?.ok || result.riskLevel !== 'SAFE') return null;
   try {
@@ -310,6 +320,7 @@ export function QrScanner() {
           result={result}
           texts={RESULT_TEXT}
           quoteLabel="찍은 QR 내용"
+          blockedSite={siteOf(checked) ?? undefined}
           quote={checked}
           extraAction={
             link && (

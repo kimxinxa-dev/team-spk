@@ -55,6 +55,8 @@ export type PhoneAppContext = {
   drafts: Record<string, string>;
   /** 휴대폰에서 마지막으로 복사한 글 */
   clipboard: string;
+  /** 이 주소를 막는다(나중에 문자·인터넷에서 열려고 하면 차단 화면) */
+  blockLink(raw: string): void;
 };
 
 /**
@@ -431,6 +433,9 @@ const CSS = `
 .vp-zoom span.on{background:rgba(255,255,255,.3);color:#fcd34d;font-size:12.5px}
 .vp-modes{flex:none;display:flex;justify-content:center;gap:18px;padding:6px 0;background:#000;color:#9ca3af;font-size:.85em;font-weight:700}
 .vp-modes .on{color:#fcd34d}
+.vp-blockln{display:grid;gap:2px;border:2px solid;border-radius:14px;padding:10px 12px}
+.vp-blockln b{font-size:1.05em}
+.vp-blockln span{font-size:.85em;font-weight:700;word-break:break-all;opacity:.85}
 .vp-camc{flex:none;height:100px;background:#000;display:flex;align-items:center;justify-content:space-around}
 .vp-shut{width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:#fff;box-shadow:inset 0 0 0 3px #000;cursor:pointer}
 .vp-shut:active{transform:scale(.94)}
@@ -745,6 +750,7 @@ export class VirtualPhone {
       toast: (text) => this.toast(text),
       drafts: this.drafts,
       clipboard: this.clipboard,
+      blockLink: (raw) => this.blockedHosts.add(hostOf(raw)),
     };
   }
 
@@ -828,6 +834,7 @@ export class VirtualPhone {
           this.camQr = { ...this.camQr, judged: true, html: scanned.html };
           // 위험·주의면 틀이 조여진 뒤 문자 판독과 같은 경고 팝업을 띄운다.
           if (scanned.result.riskLevel !== 'SAFE') {
+            this.blockedHosts.add(hostOf(scanned.content));
             const index = this.camQr.index;
             setTimeout(() => {
               if (this.camQr?.index !== index || !this.camQr.judged) return;
@@ -910,6 +917,9 @@ export class VirtualPhone {
       case 'ov-close':
         this.overlay = null;
         return;
+      case 'qr-open':
+        this.overlay = null;
+        return this.openLink(arg, '');
       case 'qr-next':
         this.overlay = null;
         return this.aimQr();
@@ -1312,11 +1322,12 @@ export class VirtualPhone {
         <div class="hd"><i style="background:${t.color}">${PHONE_ICONS.shield}</i><span><small>안심 지킴이 · 카메라로 찍은 QR</small><h4 style="color:${t.color}">${QR_RISK_TITLE[ov.result.riskLevel]}</h4></span></div>
         <div style="display:flex;justify-content:space-between;font-weight:700;font-size:.9em"><span>위험도</span><span style="color:${t.color}">${ov.result.score}%</span></div>
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
+        <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>🔒 링크 접속을 차단했어요</b><span>${esc(hostOf(ov.content))}</span></div>
         <ul>${ov.result.reasons
           .slice(0, 3)
           .map((r) => `<li>${esc(r)}</li>`)
           .join('')}</ul>
-        <div class="tip" style="word-break:break-all">${esc(ov.place)} · ${esc(ov.content)}<br>이 주소는 열지 않았어요. QR을 붙인 곳에 전화로 먼저 확인하세요.</div>
+        <div class="tip">${esc(ov.place)}에 붙어 있던 QR이에요.</div>
         <div class="btns"><button data-act="qr-next">다른 QR 비추기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
     }
     if (ov.kind === 'msg-menu') {
