@@ -231,7 +231,8 @@ const CSS = `
 .vp-full h4{margin:0;font-size:1.3em}
 .vp-full button{min-height:46px;border-radius:14px;border:0;background:#facc15;font:inherit;font-weight:800;cursor:pointer;color:#18181b}
 .vp-full button.sub{background:transparent;border:2px solid #64748b;color:#e2e8f0}
-.vp-guide{position:absolute;left:8px;right:8px;bottom:46px;z-index:45;background:#fffbea;border:3px solid #facc15;border-radius:18px;padding:10px 12px;box-shadow:0 8px 20px rgba(0,0,0,.2);font-size:14px}
+.vp-guide{position:absolute;left:8px;right:8px;bottom:46px;z-index:45;background:rgba(255,251,234,.96);border:3px solid #facc15;border-radius:18px;padding:8px 12px;box-shadow:0 8px 20px rgba(0,0,0,.2);font-size:14px;pointer-events:none}
+.vp-guide.top{top:32px;bottom:auto}
 .vp-guide small{color:#78716c;font-weight:700}
 .vp-guide p{margin:2px 0 0;font-weight:800;font-size:15px;line-height:1.35}
 .vp-guide .hint{margin-top:4px;color:#b45309;font-weight:700;font-size:12.5px}
@@ -914,7 +915,18 @@ export class VirtualPhone {
       const target = this.root.querySelector<HTMLElement>(
         `[data-gid="${step.target}"]`,
       );
-      if (target) target.classList.add('vp-target');
+      if (target) {
+        target.classList.add('vp-target');
+        // 눌러야 할 곳이 화면 아래쪽이면 안내 상자를 위로 옮겨 가리지 않게 한다.
+        const card = this.root.querySelector<HTMLElement>('.vp-guide');
+        const screen = this.root.querySelector<HTMLElement>('.vp-scr');
+        if (card && screen) {
+          const s = screen.getBoundingClientRect();
+          const t = target.getBoundingClientRect();
+          if (t.top + t.height / 2 > s.top + s.height * 0.5)
+            card.classList.add('top');
+        }
+      }
       const hint = this.root.querySelector<HTMLElement>('[data-hint]');
       if (hint && !target)
         hint.textContent =
