@@ -207,11 +207,19 @@ export function createGuardianApp(opts: {
           <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button><button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
         </div></div>`
       : '';
-    return `${QR_STYLE}<div class="gq-vf live${camera ? ' cam now' : ''}" style="--risk:${t.solid};--risk-ink:${t.ink}">
+    // 카메라에서 위험·주의는 경고 팝업이 알리므로 주소 표시는 색을 바꾸지 않는다(정상만 초록).
+    const quiet = camera && lv !== 'SAFE';
+    const chipColor = quiet
+      ? '--risk:#facc15;--risk-ink:#1c1917'
+      : `--risk:${t.solid};--risk-ink:${t.ink}`;
+    const chipLabel = quiet
+      ? 'QR 인식됨'
+      : `${CHIP[lv]} · 위험도 ${r.result.score}%`;
+    return `${QR_STYLE}<div class="gq-vf live${camera ? ' cam now' : ''}" style="${chipColor}">
         <span class="gq-cap">QR 코드를 화면 가운데에 비추세요</span>
         <div class="gq-float"><div class="gq-board"><p>${esc(q.place)}</p><b>${esc(q.title)}</b>${demoQrSvg(q.content)}</div></div>
         <span class="gq-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="gq-chip" role="status"><span class="lb"><b class="a">판독 중…</b><b class="b">${CHIP[lv]} · 위험도 ${r.result.score}%</b></span><span class="u">${esc(q.content)}</span></span>
+        <span class="gq-chip" role="status"><span class="lb"><b class="a">판독 중…</b><b class="b">${chipLabel}</b></span><span class="u">${esc(q.content)}</span></span>
         ${sheet}
       </div>`;
   }
@@ -342,12 +350,17 @@ export function createGuardianApp(opts: {
         <span class="gq-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
       </div>`;
     },
-    /** 셔터를 누르면 판독해 기록에 넣고, 판독 화면(색 표시만, 결과 창 없음)을 돌려준다. */
+    /** 셔터를 누르면 판독해 기록에 넣고, 판독 화면과 결과(위험·주의면 휴대폰이 경고 팝업을 띄운다)를 돌려준다. */
     scanQr(index: number) {
       const q = DEMO_QR_CODES[index];
-      if (!q) return '';
+      if (!q) return null;
       const r = add('카메라 QR', q.content, opts.analyzeQr(q.content));
-      return qrScanView(r, index, false, true);
+      return {
+        html: qrScanView(r, index, false, true),
+        result: r.result,
+        content: q.content,
+        place: q.place,
+      };
     },
     /** 휴대폰에 문자가 도착했을 때 실시간 감지 기록에 넣는다. */
     record(source: string, text: string, result: Analysis) {

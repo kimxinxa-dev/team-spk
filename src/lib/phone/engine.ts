@@ -84,6 +84,7 @@ type ChatLine = { me: boolean; text?: string; photo?: string };
 type SmsLine = { from: string; text: string; risk?: Analysis };
 type Overlay =
   | { kind: 'warn'; msg: IncomingMessage; result: Analysis }
+  | { kind: 'qr-warn'; content: string; place: string; result: Analysis }
   | { kind: 'blocked' }
   | { kind: 'install-guard' }
   | { kind: 'msg-menu'; text: string };
@@ -571,8 +572,20 @@ export type CameraQr = {
   count: number;
   /** QR이 비춰진(판독 전) 화면 */
   preview(index: number): string;
-  /** 셔터를 눌러 판독한 화면 */
-  scan(index: number): string;
+  /** 셔터를 눌러 판독한 화면과 결과(위험·주의면 경고 팝업을 띄운다) */
+  scan(index: number): {
+    html: string;
+    result: Analysis;
+    content: string;
+    place: string;
+  } | null;
+};
+
+/** 카메라로 찍은 QR의 경고 팝업 제목 */
+const QR_RISK_TITLE: Record<Risk, string> = {
+  DANGER: '위험한 QR 코드예요',
+  CAUTION: '조심해야 할 QR 코드예요',
+  SAFE: '안전해 보이는 QR 코드예요',
 };
 
 export class VirtualPhone {
@@ -809,13 +822,24 @@ export class VirtualPhone {
       case 'shutter':
         // QR이 비춰져 있으면 셔터가 판독, 판독한 뒤에 누르면 다음 QR을 비춘다.
         if (this.qr && this.camQr) {
-          if (this.camQr.judged) this.aimQr();
-          else
-            this.camQr = {
-              ...this.camQr,
-              judged: true,
-              html: this.qr.scan(this.camQr.index),
-            };
+          if (this.camQr.judged) return this.aimQr();
+          const scanned = this.qr.scan(this.camQr.index);
+          if (!scanned) return;
+          this.camQr = { ...this.camQr, judged: true, html: scanned.html };
+          // 위험·주의면 틀이 조여진 뒤 문자 판독과 같은 경고 팝업을 띄운다.
+          if (scanned.result.riskLevel !== 'SAFE') {
+            const index = this.camQr.index;
+            setTimeout(() => {
+              if (this.camQr?.index !== index || !this.camQr.judged) return;
+              this.overlay = {
+                kind: 'qr-warn',
+                content: scanned.content,
+                place: scanned.place,
+                result: scanned.result,
+              };
+              this.render();
+            }, 900);
+          }
           return;
         }
         this.photos.unshift(['🌳', '🏠', '🌼', '🐱'][this.photos.length % 4]);
@@ -886,6 +910,9 @@ export class VirtualPhone {
       case 'ov-close':
         this.overlay = null;
         return;
+      case 'qr-next':
+        this.overlay = null;
+        return this.aimQr();
       case 'ov-view': {
         const ov = this.overlay;
         this.overlay = null;
@@ -1278,6 +1305,19 @@ export class VirtualPhone {
           .join('')}</ul>
         <div class="tip">링크를 누르지 마세요. 돈·인증번호를 요구하면 가족에게 먼저 물어보세요.</div>
         <div class="btns"><button data-act="ov-view">문자 보기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
+    }
+    if (ov.kind === 'qr-warn') {
+      const t = RISK_TEXT[ov.result.riskLevel];
+      return `<div class="vp-ov" role="alertdialog" aria-label="${QR_RISK_TITLE[ov.result.riskLevel]}"><div class="vp-pop" style="color:#18181b">
+        <div class="hd"><i style="background:${t.color}">${PHONE_ICONS.shield}</i><span><small>안심 지킴이 · 카메라로 찍은 QR</small><h4 style="color:${t.color}">${QR_RISK_TITLE[ov.result.riskLevel]}</h4></span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:.9em"><span>위험도</span><span style="color:${t.color}">${ov.result.score}%</span></div>
+        <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
+        <ul>${ov.result.reasons
+          .slice(0, 3)
+          .map((r) => `<li>${esc(r)}</li>`)
+          .join('')}</ul>
+        <div class="tip" style="word-break:break-all">${esc(ov.place)} · ${esc(ov.content)}<br>이 주소는 열지 않았어요. QR을 붙인 곳에 전화로 먼저 확인하세요.</div>
+        <div class="btns"><button data-act="qr-next">다른 QR 비추기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
     }
     if (ov.kind === 'msg-menu') {
       return `<div class="vp-ov" data-act="ov-close" role="dialog" aria-label="문자 메뉴"><div class="vp-pop" data-act="noop"><span class="tip" style="max-height:96px;overflow:hidden">${esc(ov.text)}</span>
