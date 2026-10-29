@@ -7,7 +7,10 @@ import { QrScanner } from './QrScanner';
 
 export const metadata = { title: '문자 지킴이 — 안심 지킴이' };
 
-/** 주요 기능 1. 문자 지킴이: 체험 문자 실시간 경고 · 문자·카톡 검사 · QR 검사 · 검사 기록 */
+/**
+ * 스미싱 차단. 주요 기능 1 실시간 문자 인식·감지·차단(demo), 2 QR 감지(qr),
+ * 3 붙여 넣은 문자의 AI 판단(message)이 검사 기록 하나를 함께 쓴다.
+ */
 export default function CheckPage() {
   return (
     <div className="space-y-8">
@@ -18,14 +21,22 @@ export default function CheckPage() {
           </h1>
           <p className="mt-2 text-lg text-zinc-700">
             문자·카카오톡·QR 코드가 사기인지 학습된 AI가 바로 채점하고, 위험하면
-            크게 알려 드려요.
+            막아 드려요.
           </p>
         </div>
         <Suspense fallback={<HistorySkeleton />}>
           <GuardTabs
             panels={{
               demo: <DemoPhone />,
-              message: <MessageCheckForm />,
+              message: (
+                <div className="space-y-2">
+                  <p className="text-lg text-zinc-700">
+                    받은 문자를 길게 눌러 복사한 뒤 붙여 넣으면, AI가 스미싱인지
+                    판단해 드려요.
+                  </p>
+                  <MessageCheckForm />
+                </div>
+              ),
               qr: (
                 <div className="space-y-2">
                   <p className="text-lg text-zinc-700">

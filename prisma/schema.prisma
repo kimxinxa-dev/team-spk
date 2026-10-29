@@ -18,8 +18,6 @@ model User {
 
   scans         ScanRecord[]
   contacts      Contact[]
-  guideNotes    GuideNote[]
-  kioskSessions KioskSession[]
 
   @@map("users")
 }
@@ -75,49 +73,6 @@ model ScanRecord {
   @@map("scan_records")
 }
 
-/// 말로 물어보기에서 저장한 배움 노트. 주요 기능 2. 안내 단계는 코드의 안내 목록(guideKey)에서 가져온다.
-model GuideNote {
-  id              String   @id @default(uuid()) @db.Uuid
-  userId          String   @db.Uuid
-  guideKey        String
-  title           String
-  question        String
-  /// 연습을 끝낸 횟수. 동시에 눌러도 틀리지 않게 DB에서 1씩 올린다.
-  practiceCount   Int      @default(0)
-  /// 같은 저장 요청이 두 번 와도 한 번만 저장하기 위한 요청 번호
-  clientRequestId String   @db.Uuid
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, clientRequestId])
-  @@index([userId, createdAt(sort: Desc)])
-  @@map("guide_notes")
-}
-
-/// 키오스크 연습 기록. 주요 기능 3.
-model KioskSession {
-  id              String   @id @default(uuid()) @db.Uuid
-  userId          String   @db.Uuid
-  /// restaurant(음식점) | hospital(병원) | train(기차역)
-  kioskType       String
-  /// 연습에 걸린 시간(초)
-  durationSec     Int
-  mistakes        Int
-  /// 가장 많이 틀린 단계 이름
-  stuckStep       String?
-  memo            String?
-  clientRequestId String   @db.Uuid
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, clientRequestId])
-  @@index([userId, createdAt(sort: Desc)])
-  @@map("kiosk_sessions")
-}
 
 /// 보호자·연락처. 주요 기능 3. 음성 도우미의 "○○한테 전화"와 위험 알림이 이 목록을 쓴다.
 model Contact {

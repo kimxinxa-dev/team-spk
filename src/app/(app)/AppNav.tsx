@@ -6,8 +6,6 @@ import { usePathname } from 'next/navigation';
 const ITEMS = [
   { href: '/home', label: '홈', icon: '🏠' },
   { href: '/check', label: '문자 지킴이', icon: '🛡️' },
-  { href: '/ask', label: '말로 묻기', icon: '🎤' },
-  { href: '/kiosk', label: '키오스크', icon: '🍽️' },
   { href: '/contacts', label: '연락처', icon: '👨‍👩‍👧' },
 ] as const;
 
@@ -19,7 +17,7 @@ export function AppNav() {
       aria-label="주요 메뉴"
       className="fixed inset-x-0 bottom-0 border-t-2 border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="mx-auto grid max-w-3xl grid-cols-5">
+      <ul className="mx-auto grid max-w-3xl grid-cols-3">
         {ITEMS.map((item) => {
           const active = pathname === item.href;
           return (

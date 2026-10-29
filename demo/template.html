@@ -148,8 +148,9 @@
       style="width: 100%; display: grid; justify-items: center"
     ></div>
     <p class="hint">
-      휴대폰을 자유롭게 눌러 보세요. 홈 화면의 🛡️ <b>안심 지킴이</b> 앱에 문자
-      지킴이·QR 검사·말로 물어보기·키오스크 연습이 들어 있어요.
+      휴대폰을 자유롭게 쓰다가 왼쪽 [문자 받기]를 눌러 보세요. 홈 화면의 🛡️
+      <b>안심 지킴이</b> 앱에서 실시간 감지 기록·QR 검사·붙여 넣어 검사를 할 수
+      있어요.
     </p>
   </main>
 </div>
@@ -158,27 +159,9 @@
   /*SIM*/
 </script>
 <script>
-  function speak(t) {
-    try {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(t);
-      u.lang = 'ko-KR';
-      u.rate = 0.9;
-      speechSynthesis.speak(u);
-    } catch (e) {}
-  }
-  let currentGuide = null;
   const guardian = Sim.createGuardianApp({
     analyzeMessage: (t, p) => Sim.analyzeScan('MESSAGE', t, p),
     analyzeQr: (t) => Sim.analyzeScan('QR', t),
-    guides: Sim.GUIDES,
-    matchGuides: Sim.matchGuides,
-    scenarios: Sim.SCENARIOS,
-    tipFor: Sim.tipFor,
-    onGuide: (g) => {
-      currentGuide = g;
-      speak(g.steps[0].instruction);
-    },
   });
   const phone = new Sim.VirtualPhone(document.getElementById('phone'), {
     apps: [guardian.app],
@@ -190,12 +173,8 @@
           e.message.text,
           e.result,
         );
-      if (e.type === 'guide-step' && currentGuide)
-        speak(currentGuide.steps[e.index].instruction);
-      if (e.type === 'guide-done') speak('끝까지 해냈어요! 정말 잘하셨어요.');
     },
   });
-  guardian.setRefresh(() => phone.refresh());
   const sel = document.getElementById('sample');
   sel.innerHTML = Sim.DEMO_SAMPLES.map(
     (s) => `<option value="${s.id}">${s.label}</option>`,

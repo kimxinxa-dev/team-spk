@@ -7,30 +7,32 @@ export const metadata = { title: '홈 — 안심 지킴이' };
 
 const FEATURES = [
   {
-    href: '/check',
-    icon: '🛡️',
-    title: '문자 지킴이',
-    desc: '사기 문자·QR을 바로 검사해요',
+    href: '/check?tab=demo',
+    icon: '📩',
+    title: '실시간 감지',
+    desc: '문자가 오는 순간 검사하고 위험하면 막아요',
   },
   {
-    href: '/ask',
-    icon: '🎤',
-    title: '말로 물어보기',
-    desc: '누를 곳을 노란 테두리로 알려 드려요',
+    href: '/check?tab=qr',
+    icon: '📷',
+    title: 'QR 검사',
+    desc: '찍기 전에 위험한 주소인지 확인해요',
   },
   {
-    href: '/kiosk',
-    icon: '🍽️',
-    title: '키오스크 연습',
-    desc: '음식점·병원·기차역 무인기 연습',
+    href: '/check?tab=message',
+    icon: '✍️',
+    title: '붙여 넣어 검사',
+    desc: '받은 문자를 붙여 넣으면 AI가 판단해요',
   },
 ];
 
-/** 로그인 후 첫 화면. 기능 바로가기는 바로 보이고, 세 기능의 기록을 모은 '나의 성장'만 따로 불러온다. */
+/** 로그인 후 첫 화면. 세 가지 스미싱 검사로 바로 가고, 내 검사 기록 요약만 따로 불러온다. */
 export default function HomePage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">무엇을 도와 드릴까요?</h1>
+      <h1 className="text-3xl font-bold">
+        사기 문자, 안심 지킴이가 막아 드려요
+      </h1>
       <nav aria-label="기능 바로가기" className="grid gap-4 sm:grid-cols-3">
         {FEATURES.map((f) => (
           <Link
@@ -56,74 +58,54 @@ export default function HomePage() {
             role="status"
             className="rounded-2xl bg-blue-50 p-5 text-lg text-zinc-600"
           >
-            나의 기록을 모으고 있어요…
+            내 검사 기록을 모으고 있어요…
           </p>
         }
       >
-        <MyGrowth />
+        <MySummary />
       </Suspense>
     </div>
   );
 }
 
-async function MyGrowth() {
+async function MySummary() {
   const user = await requireUser();
   const s = await getMyStats(user.id);
-  const empty = s.scamCount + s.guideCount + s.kioskCount === 0;
   return (
     <section
-      aria-labelledby="growth"
+      aria-labelledby="summary"
       className="space-y-3 rounded-2xl bg-blue-50 p-5"
     >
-      <h2 id="growth" className="text-2xl font-bold">
-        나의 성장
+      <h2 id="summary" className="text-2xl font-bold">
+        내 검사 기록
       </h2>
-      {empty ? (
+      {s.total === 0 ? (
         <p className="text-lg text-zinc-700">
-          아직 기록이 없어요. 위의 기능을 하나 해 보세요!
+          아직 검사한 문자가 없어요. 위에서 하나 해 보세요!
         </p>
       ) : (
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat
-            label="검사한 문자·QR"
-            value={`${s.scamCount}건`}
-            sub={`위험 ${s.dangerCount}건 찾음`}
-          />
-          <Stat
-            label="배운 방법"
-            value={`${s.guideCount}개`}
-            sub={`연습 ${s.practiceTotal}번`}
-          />
-          <Stat
-            label="키오스크 연습"
-            value={`${s.kioskCount}번`}
-            sub={`평균 실수 ${s.avgMistakes}번`}
-          />
-          <Stat
-            label="다음에 연습할 곳"
-            value={s.topStuckStep ?? '없음'}
-            sub="자주 막힌 단계"
-          />
+          <Stat label="검사한 문자·QR" value={`${s.total}건`} />
+          <Stat label="찾아낸 위험" value={`${s.danger}건`} />
+          <Stat label="QR 검사" value={`${s.qr}건`} />
+          <Stat label="정답 알려 준 기록" value={`${s.verdicts}건`} />
         </dl>
       )}
+      <Link
+        href="/check"
+        className="inline-flex min-h-12 items-center text-lg font-bold text-blue-800 underline"
+      >
+        검사 기록 전체 보기
+      </Link>
     </section>
   );
 }
 
-function Stat({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-}) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-white p-4">
       <dt className="text-base text-zinc-600">{label}</dt>
       <dd className="text-2xl font-bold text-blue-800">{value}</dd>
-      <dd className="text-base text-zinc-600">{sub}</dd>
     </div>
   );
 }

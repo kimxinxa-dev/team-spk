@@ -4,9 +4,9 @@ import { useSearchParams } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 const TABS = [
-  { id: 'demo', label: '📩 체험 문자' },
-  { id: 'message', label: '✍️ 문자 검사' },
+  { id: 'demo', label: '📩 실시간 감지' },
   { id: 'qr', label: '📷 QR 검사' },
+  { id: 'message', label: '✍️ 붙여 넣기' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];

@@ -9,14 +9,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* 말로 물어보기·키오스크·체험 문자 화면이 쓰는 이름. 기존 파랑·회색 색상과 같은 값이다. */
+  /* 체험 문자 화면이 쓰는 색 이름. 기존 파랑·회색 색상과 같은 값이다. */
   --color-navy: #1d4ed8;
-  --color-cream: #eff6ff;
   --color-line: #d4d4d8;
   --color-muted: #52525b;
-  --color-yellow: #facc15;
   --color-danger: #b91c1c;
-  --color-caution: #b45309;
   --color-safe: #15803d;
   /* 한글 시스템 글꼴(따로 내려받지 않는다) */
   --font-sans:
@@ -38,55 +35,4 @@ body {
 :focus-visible {
   outline: 3px solid #1d4ed8;
   outline-offset: 2px;
-}
-
-/* 노란 테두리 안내: 눌러야 할 곳을 깜빡이는 노란 테두리로 보여 준다. */
-@keyframes pulse-border {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgb(250 204 21 / 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgb(250 204 21 / 0);
-  }
-}
-
-@keyframes slide-down {
-  from {
-    transform: translateY(-110%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes bounce-arrow {
-  0%,
-  100% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, -6px);
-  }
-}
-
-.guide-target {
-  outline: 5px solid var(--color-yellow);
-  outline-offset: 2px;
-  animation: pulse-border 1.2s ease-in-out infinite;
-  position: relative;
-  z-index: 1;
-}
-
-.notify-in {
-  animation: slide-down 0.45s ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .guide-target,
-  .notify-in {
-    animation: none;
-  }
 }

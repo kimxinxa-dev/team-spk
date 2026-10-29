@@ -1,27 +1,23 @@
 /**
  * 자유롭게 조작하는 가상 휴대폰(연습용).
  * 홈·메신저·문자·카메라·사진첩·설정·전화·시계·인터넷 앱을 실제처럼 오가며 쓸 수 있고,
- * 안내 모드에서는 지금 눌러야 할 곳(data-gid)에 노란 테두리를 띄운다.
  * 문자를 받으면 채점 함수로 검사해 위험하면 경고 팝업·링크 차단·설치 가리기를 보여 준다.
  * React 밖의 순수 DOM 코드라 앱(클라이언트 컴포넌트)과 미리보기 페이지가 함께 쓴다.
  */
 
 export type Risk = 'SAFE' | 'CAUTION' | 'DANGER';
 export type Analysis = { riskLevel: Risk; score: number; reasons: string[] };
-export type PhoneGuide = {
-  title: string;
-  steps: { instruction: string; target: string }[];
-};
 export type IncomingMessage = {
   app: 'sms' | 'messenger';
   from: string;
   text: string;
 };
 
-export type PhoneEvent =
-  | { type: 'guide-step'; index: number }
-  | { type: 'guide-done' }
-  | { type: 'message-checked'; message: IncomingMessage; result: Analysis };
+export type PhoneEvent = {
+  type: 'message-checked';
+  message: IncomingMessage;
+  result: Analysis;
+};
 
 type Screen =
   | { id: 'home' }
@@ -55,14 +51,12 @@ export type PhoneAppContext = {
   push(view: string, data?: string): void;
   back(): void;
   toast(text: string): void;
-  startGuide(guide: PhoneGuide): void;
   /** 휴대폰 안 입력칸(data-model)의 현재 값 */
   drafts: Record<string, string>;
 };
 
 /**
  * 휴대폰에 설치하는 앱. render는 화면 HTML을, handle은 data-act="x:앱id:동작" 버튼의 동작을 맡는다.
- * handle이 false를 돌려주면 안내 단계를 넘기지 않는다.
  */
 export type PhoneApp = {
   id: string;
@@ -522,13 +516,6 @@ const CSS = `
 .vp-dialog .btns button{border:0;background:none;font:inherit;font-weight:700;color:#2563eb;min-height:42px;padding:0 16px;border-radius:21px;cursor:pointer}
 .vp-dialog .btns button.ghost{color:#6b7280}
 .vp-dimmed{flex:1;display:flex;flex-direction:column;background:rgba(0,0,0,.35)}
-.vp-guide{position:absolute;left:8px;right:8px;bottom:48px;z-index:45;background:rgba(255,251,234,.96);border:3px solid #facc15;border-radius:20px;padding:8px 12px;box-shadow:0 8px 20px rgba(0,0,0,.2);font-size:14px;pointer-events:none}
-.vp-guide.top{top:36px;bottom:auto}
-.vp-guide small{color:#78716c;font-weight:700}
-.vp-guide p{margin:2px 0 0;font-weight:800;font-size:15px;line-height:1.35}
-.vp-guide .hint{margin-top:4px;color:#b45309;font-weight:700;font-size:12.5px}
-.vp-target{outline:4px solid #facc15 !important;outline-offset:2px;border-radius:16px;animation:vppulse 1.1s ease-in-out infinite;position:relative;z-index:2}
-@keyframes vppulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.8)}50%{box-shadow:0 0 0 9px rgba(250,204,21,0)}}
 .vp-toast{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:60;background:rgba(39,39,42,.92);color:#fff;border-radius:18px;padding:8px 16px;font-size:12.5px;white-space:nowrap}
 .vp-pad{padding:12px;display:grid;gap:10px;align-content:start}
 .vp-card{background:#fff;border-radius:22px;padding:14px;display:grid;gap:6px}
@@ -559,8 +546,7 @@ const CSS = `
 .vp-appbar{flex:none;padding:6px 16px 14px;color:#fff;display:flex;align-items:center;gap:10px}
 .vp-appbar svg{width:26px;height:26px}
 .vp-appbar b{font-size:1.3em}
-@media (prefers-reduced-motion:reduce){.vp-target,.vp-heads,.vp-flash,.vp-pop{animation:none}}
-`;
+@media (prefers-reduced-motion:reduce){`;
 
 const ICON = {
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -602,8 +588,6 @@ export class VirtualPhone {
   private headsTimer: ReturnType<typeof setTimeout> | null = null;
   private toastText: string | null = null;
   private flash = false;
-  private guide: PhoneGuide | null = null;
-  private guideIndex = 0;
   private blockedHosts = new Set<string>();
   private apps: PhoneApp[];
   private drafts: Record<string, string> = {};
@@ -631,11 +615,6 @@ export class VirtualPhone {
     this.render();
   }
 
-  /** 바깥에서 설치 앱의 자료가 바뀌었을 때 화면을 다시 그린다. */
-  refresh() {
-    this.render();
-  }
-
   destroy() {
     this.root.removeEventListener('click', this.handleClick);
     this.root.removeEventListener('input', this.handleInput);
@@ -644,23 +623,6 @@ export class VirtualPhone {
   }
 
   // ---------- 바깥에서 쓰는 기능 ----------
-  startGuide(guide: PhoneGuide) {
-    this.guide = guide;
-    this.guideIndex = 0;
-    this.stack = [{ id: 'home' }];
-    this.overlay = null;
-    this.render();
-  }
-
-  stopGuide() {
-    this.guide = null;
-    this.render();
-  }
-
-  currentInstruction() {
-    return this.guide?.steps[this.guideIndex]?.instruction ?? null;
-  }
-
   receiveMessage(msg: IncomingMessage) {
     const result = this.analyze(msg.text);
     if (msg.app === 'sms') {
@@ -736,12 +698,6 @@ export class VirtualPhone {
         this.push({ id: 'ext', app: appId, view, data }),
       back: () => this.back(),
       toast: (text) => this.toast(text),
-      startGuide: (guide) => {
-        this.guide = guide;
-        this.guideIndex = 0;
-        this.overlay = null;
-        this.stack = [{ id: 'home' }];
-      },
       drafts: this.drafts,
     };
   }
@@ -751,28 +707,11 @@ export class VirtualPhone {
     if (!el || !this.root.contains(el)) return;
     const act = el.dataset.act!;
     const arg = el.dataset.arg ?? '';
-    const gid = el.closest<HTMLElement>('[data-gid]')?.dataset.gid;
-    const done = this.run(act, arg) !== false;
-    // 안내 모드: 눌러야 할 곳을 누르면 다음 단계로
-    if (
-      done &&
-      this.guide &&
-      gid &&
-      gid === this.guide.steps[this.guideIndex]?.target
-    ) {
-      this.guideIndex += 1;
-      if (this.guideIndex >= this.guide.steps.length) {
-        this.guide = null;
-        this.onEvent({ type: 'guide-done' });
-        this.toast('🎉 끝까지 해냈어요!');
-      } else {
-        this.onEvent({ type: 'guide-step', index: this.guideIndex });
-      }
-    }
+    this.run(act, arg);
     this.render();
   };
 
-  /** 동작을 실행한다. 실패해서 안내 단계를 넘기면 안 되면 false를 돌려준다. */
+  /** 버튼 동작을 실행한다. */
   private run(act: string, arg: string): boolean | void {
     if (act.startsWith('x:')) {
       const [, appId, action] = act.split(':');
@@ -1285,36 +1224,13 @@ export class VirtualPhone {
     const heads = h
       ? `<div class="vp-heads" data-act="heads" role="status"><span class="hd"><i style="background:${h.app === 'sms' ? '#2563eb' : '#eab308'}">${h.app === 'sms' ? PHONE_ICONS.mail : PHONE_ICONS.chat}</i>${h.app === 'sms' ? '메시지' : '메신저'}<em>지금</em></span><b>${esc(h.from)}</b><p>${esc(h.text.length > 70 ? `${h.text.slice(0, 70)}…` : h.text)}</p></div>`
       : '';
-    const step = this.guide?.steps[this.guideIndex];
     const scrClass = wall ? 'vp-wall' : dark ? 'vp-dark' : '';
     const scrStyle = dark && !wall ? 'background:#000;color:#fff;' : '';
     this.root.innerHTML = `<div class="vp" aria-label="연습용 가상 휴대폰"><div class="vp-scr ${scrClass}" style="--vp-font:${this.fontScale};${scrStyle}">
       <span class="vp-cam-hole"></span>${status}<div class="vp-body">${html}</div>
       <div class="vp-nav" style="${wall ? 'background:transparent' : dark ? 'background:#000' : 'background:#f3f4f8'}"><button data-act="recent" aria-label="최근 앱">${ICON.recent}</button><button data-act="home" aria-label="홈">${ICON.home}</button><button data-act="back" aria-label="뒤로">${ICON.back}</button></div>
       ${heads}${this.overlayHtml()}
-      ${step && !this.overlay ? `<div class="vp-guide" role="status"><small>안내 ${this.guideIndex + 1} / ${this.guide!.steps.length}</small><p>${esc(step.instruction)}</p><div class="hint" data-hint></div></div>` : ''}
       ${this.toastText ? `<div class="vp-toast" role="status">${esc(this.toastText)}</div>` : ''}
     </div></div>`;
-    if (step && !this.overlay) {
-      const target = this.root.querySelector<HTMLElement>(
-        `[data-gid="${step.target}"]`,
-      );
-      if (target) {
-        target.classList.add('vp-target');
-        // 눌러야 할 곳이 화면 아래쪽이면 안내 상자를 위로 옮겨 가리지 않게 한다.
-        const card = this.root.querySelector<HTMLElement>('.vp-guide');
-        const screen = this.root.querySelector<HTMLElement>('.vp-scr');
-        if (card && screen) {
-          const sr = screen.getBoundingClientRect();
-          const t = target.getBoundingClientRect();
-          if (t.top + t.height / 2 > sr.top + sr.height * 0.5)
-            card.classList.add('top');
-        }
-      }
-      const hint = this.root.querySelector<HTMLElement>('[data-hint]');
-      if (hint && !target)
-        hint.textContent =
-          '지금 화면에는 없어요. 아래 ◁ 뒤로 또는 ▢ 홈 버튼을 눌러 보세요.';
-    }
   }
 }
