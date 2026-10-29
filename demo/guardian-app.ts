@@ -70,7 +70,7 @@ export function createGuardianApp(opts: {
 
   function card(r: Rec, full: boolean) {
     return `<div class="vp-card ${r.result.riskLevel}">
-      <span><span class="vp-pill" style="background:${COLOR[r.result.riskLevel]}">${LABEL[r.result.riskLevel]} ${r.result.score}점</span> <small style="color:#6b7280">${esc(r.source)}</small></span>
+      <span><span class="vp-pill" style="background:${COLOR[r.result.riskLevel]}">${LABEL[r.result.riskLevel]} · 위험도 ${r.result.score}%</span> <small style="color:#6b7280">${esc(r.source)}</small></span>
       <span style="word-break:break-all">${esc(r.text.length > 80 && !full ? `${r.text.slice(0, 80)}…` : r.text)}</span>
       <ul style="margin:0;padding-left:16px;font-size:.9em">${r.result.reasons
         .slice(0, full ? 5 : 2)

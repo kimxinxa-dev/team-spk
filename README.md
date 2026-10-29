@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도별 경고 팝업을 띄우고, 문자 속 위험한 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 감지 결과는 검사 기록으로 저장되고 "사기 맞아요/아니에요" 정답 알려 주기·메모 고치기·지우기 | `/check` 실시간 감지 탭 (`src/app/(app)/check/demo-phone.tsx`), 가상 휴대폰 `src/lib/phone/engine.ts` | Server Action `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
 | 2. QR 감지 — 카메라로 QR 코드를 찍으면 주소를 열지 않고 먼저 검사(단축 주소·수상한 도메인·http·앱 설치 파일 등)해 기록으로 저장, 카메라가 안 되면 직접 입력. 메모 고치기·지우기 | `/check` QR 검사 탭 (`src/app/(app)/check/QrScanner.tsx`) | Server Action `createQrScan`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 판별 `src/lib/scan/rules.ts` |
-| 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면(또는 문자 앱의 [공유]로 보내면) 학습된 AI가 스미싱인지 판단해 위험도·점수·이유를 보여 주고 기록으로 저장. 사용자가 알려 준 정답을 학습 데이터에 더해 그 사람에게 맞춰 판단 | `/check` 붙여 넣기 탭 (`src/app/(app)/check/MessageCheckForm.tsx`) | Server Action `createMessageScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts` |
+| 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면(또는 문자 앱의 [공유]로 보내면) 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 사용자가 알려 준 정답을 학습 데이터에 더해 그 사람에게 맞춰 판단 | `/check` 붙여 넣기 탭 (`src/app/(app)/check/MessageCheckForm.tsx`) | Server Action `createMessageScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts` |
 
 - 현재 상태: 화면·서버 처리·DB 모델을 만들고 타입 검사·린트·빌드를 확인했습니다. Supabase 프로젝트를 연결하기 전이라 실제 저장·로그인은 아직 확인하지 않았습니다.
 - 로그인(이메일·비밀번호, Supabase Auth)해야 위 화면을 쓸 수 있고, 내 기록은 나만 보입니다(모든 서버 처리가 로그인 확인 → 입력 검증 → 내 자료인지 확인).

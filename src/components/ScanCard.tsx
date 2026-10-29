@@ -52,7 +52,7 @@ export function ScanCard({ scan }: { scan: ScanCardData }) {
         <span className="flex items-center gap-2">
           <RiskBadge level={scan.riskLevel} />
           <span className="text-lg font-bold text-zinc-800">
-            {scan.score}점
+            위험도 {scan.score}%
           </span>
         </span>
         <p className="text-base text-zinc-600">

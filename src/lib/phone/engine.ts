@@ -1030,7 +1030,7 @@ export class VirtualPhone {
             );
             const band =
               l.risk && l.risk.riskLevel !== 'SAFE'
-                ? `<span class="vp-riskband" style="background:${RISK_TEXT[l.risk.riskLevel].color}">${PHONE_ICONS.shield}안심 지킴이 · ${l.risk.riskLevel === 'DANGER' ? '사기 의심' : '주의'} ${l.risk.score}점</span>`
+                ? `<span class="vp-riskband" style="background:${RISK_TEXT[l.risk.riskLevel].color}">${PHONE_ICONS.shield}안심 지킴이 · ${l.risk.riskLevel === 'DANGER' ? '사기 의심' : '주의'} 위험도 ${l.risk.score}%</span>`
                 : '';
             return `<div class="vp-line"><div class="col">${band}<div class="vp-msg">${body}</div></div><span class="tm">오전 10:${20 + i}</span></div>`;
           })
@@ -1201,7 +1201,7 @@ export class VirtualPhone {
       const t = RISK_TEXT[ov.result.riskLevel];
       return `<div class="vp-ov" role="alertdialog" aria-label="${t.title}"><div class="vp-pop">
         <div class="hd"><i style="background:${t.color}">${PHONE_ICONS.shield}</i><span><small>안심 지킴이 · 방금 받은 ${ov.msg.app === 'sms' ? '문자' : '메신저'}</small><h4 style="color:${t.color}">${t.title}</h4></span></div>
-        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:.9em"><span>위험 점수</span><span style="color:${t.color}">${ov.result.score}점</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:.9em"><span>위험도</span><span style="color:${t.color}">${ov.result.score}%</span></div>
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
         <ul>${ov.result.reasons
           .slice(0, 3)
