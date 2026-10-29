@@ -7,3 +7,6 @@ package-lock.json
 next-env.d.ts
 *.tsbuildinfo
 /README.md
+
+# Vercel 플랫폼 설정(배포할 때 Vercel이 내용을 손댈 수 있어 서식 검사에서 뺀다)
+vercel.json
