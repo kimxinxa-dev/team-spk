@@ -80,9 +80,28 @@ body {
     padding: 6px 8px 0;
     background: #eef1f6;
     /* 조작 바(약 60px)를 뺀 높이에 9:19로 맞춘다 */
-    --vp-max: min(380px, calc(100vw - 16px), calc((100dvh - 66px) * 9 / 19));
+    --vp-max: min(380px, calc(100vw - 16px), calc((100dvh - 72px) * 9 / 19));
   }
   html:has(#panel-demo:not([hidden]) .demo-full) {
     overflow: hidden;
   }
+}
+
+/* 첫 화면(가상 휴대폰): 위 작은 막대(문자 받기) + 남은 높이를 채운 휴대폰. 휴대폰·PC 모두 스크롤 없이 한 화면 */
+.phone-stage {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 396px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 6px 8px 0;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 6px;
+  /* 막대(약 68px)를 뺀 높이에 9:19로 맞춘다 */
+  --vp-max: min(380px, calc(100vw - 16px), calc((100dvh - 72px) * 9 / 19));
+}
+html:has(.phone-stage) body {
+  background: #eef1f6;
 }

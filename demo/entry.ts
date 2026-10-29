@@ -2,5 +2,5 @@
 export { analyzeScan } from '../src/lib/scan/analyze';
 export { DEMO_SAMPLES } from '../src/app/(app)/check/samples';
 export { VirtualPhone } from '../src/lib/phone/engine';
-export { createGuardianApp } from './guardian-app';
-export { authSchema, signUpSchema } from '../src/lib/validation';
+export { createGuardianApp } from '../src/lib/phone/guardian-app';
+export { createMemoryStore } from './memory-store';

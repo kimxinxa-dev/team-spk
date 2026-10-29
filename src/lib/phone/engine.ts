@@ -56,6 +56,8 @@ export type PhoneAppContext = {
   clipboard: string;
   /** 이 주소를 막는다(나중에 문자·인터넷에서 열려고 하면 차단 화면) */
   blockLink(raw: string): void;
+  /** 버튼을 누르지 않았는데 화면을 다시 그려야 할 때(서버 응답을 받은 뒤 등) */
+  refresh(): void;
 };
 
 /**
@@ -664,12 +666,14 @@ export class VirtualPhone {
     }
     this.root.addEventListener('click', this.handleClick);
     this.root.addEventListener('input', this.handleInput);
+    this.root.addEventListener('keydown', this.handleKey);
     this.render();
   }
 
   destroy() {
     this.root.removeEventListener('click', this.handleClick);
     this.root.removeEventListener('input', this.handleInput);
+    this.root.removeEventListener('keydown', this.handleKey);
     if (this.headsTimer) clearTimeout(this.headsTimer);
     this.root.innerHTML = '';
   }
@@ -681,6 +685,14 @@ export class VirtualPhone {
     if (this.top.id !== 'camera') this.push({ id: 'camera' });
     this.overlay = null;
     this.camQr = { index, judged: false, html: this.qr.preview(index) };
+    this.render();
+  }
+
+  /** 설치한 앱의 화면을 바로 연다(주소로 들어왔을 때 등). 뒤로 가면 홈 화면. */
+  openApp(appId: string, view = 'main', data = '') {
+    if (!this.apps.some((a) => a.id === appId)) return;
+    this.overlay = null;
+    this.stack = [{ id: 'home' }, { id: 'ext', app: appId, view, data }];
     this.render();
   }
 
@@ -764,6 +776,15 @@ export class VirtualPhone {
     if (el.dataset?.model) this.drafts[el.dataset.model] = el.value;
   };
 
+  /** 입력칸에서 Enter를 누르면 data-enter에 적힌 버튼 동작을 한다(로그인 등). */
+  private handleKey = (e: KeyboardEvent) => {
+    const el = e.target as HTMLElement;
+    if (e.key !== 'Enter' || !el.dataset?.enter || e.isComposing) return;
+    e.preventDefault();
+    this.run(el.dataset.enter, el.dataset.arg ?? '');
+    this.render();
+  };
+
   private appContext(appId: string): PhoneAppContext {
     return {
       push: (view, data = '') =>
@@ -773,6 +794,7 @@ export class VirtualPhone {
       drafts: this.drafts,
       clipboard: this.clipboard,
       blockLink: (raw) => this.blockedHosts.add(hostOf(raw)),
+      refresh: () => this.render(),
     };
   }
 
@@ -1364,6 +1386,11 @@ export class VirtualPhone {
   }
 
   private render() {
+    // 다시 그려도 글을 쓰던 입력칸의 커서가 사라지지 않게 기억해 둔다.
+    const active = document.activeElement as HTMLInputElement | null;
+    const focusModel =
+      active && this.root.contains(active) ? active.dataset.model : undefined;
+    const caret = focusModel ? active!.selectionStart : null;
     const s = this.top;
     if (s.id !== this.lastScreen) {
       this.lastScreen = s.id;
@@ -1383,5 +1410,18 @@ export class VirtualPhone {
       ${heads}${this.overlayHtml()}
       ${this.toastText ? `<div class="vp-toast" role="status">${esc(this.toastText)}</div>` : ''}
     </div></div>`;
+    if (focusModel) {
+      const el = this.root.querySelector<HTMLInputElement>(
+        `[data-model="${globalThis.CSS.escape(focusModel)}"]`,
+      );
+      el?.focus();
+      if (el && caret !== null) {
+        try {
+          el.setSelectionRange(caret, caret);
+        } catch {
+          // email 입력칸 등은 커서 위치를 정할 수 없다.
+        }
+      }
+    }
   }
 }
