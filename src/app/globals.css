@@ -68,3 +68,21 @@ body {
     opacity: 1;
   }
 }
+
+/* 휴대폰 폭에서 실시간 감지를 시뮬레이션(simulation.html)과 같게: 위 한 줄 조작 바 + 남은 높이를 채운 가상 휴대폰 */
+@media (max-width: 767px) {
+  .demo-full {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    align-content: start;
+    gap: 6px;
+    padding: 6px 8px 0;
+    background: #eef1f6;
+    /* 조작 바(약 60px)를 뺀 높이에 9:19로 맞춘다 */
+    --vp-max: min(380px, calc(100vw - 16px), calc((100dvh - 66px) * 9 / 19));
+  }
+  html:has(#panel-demo:not([hidden]) .demo-full) {
+    overflow: hidden;
+  }
+}

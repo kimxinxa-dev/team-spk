@@ -30,7 +30,7 @@ function ShieldMark() {
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-5 pt-6 pb-12">
+    <main className="mx-auto w-full max-w-md flex-1 px-5 pt-6 pb-12 [@media(max-height:1000px)]:pt-1 [@media(max-height:1000px)]:pb-4">
       <Link
         href="/"
         className="inline-flex min-h-12 items-center text-lg font-semibold text-zinc-600 hover:text-blue-700"
@@ -38,7 +38,7 @@ export default function LoginPage() {
         ← 처음 화면
       </Link>
 
-      <div className="mt-4 grid justify-items-center gap-3 text-center">
+      <div className="mt-4 grid justify-items-center gap-3 text-center [@media(max-height:1000px)]:mt-0 [@media(max-height:1000px)]:gap-2">
         <ShieldMark />
         <h1 className="text-3xl font-bold">안심 지킴이</h1>
         <p className="text-lg text-balance text-zinc-700">
@@ -48,7 +48,7 @@ export default function LoginPage() {
 
       <LoginForm />
 
-      <p className="mt-6 text-center text-base text-balance text-zinc-600">
+      <p className="mt-6 [@media(max-height:1000px)]:mt-3 text-center text-base text-balance text-zinc-600">
         <span aria-hidden="true">🔒 </span>내 검사 기록과 연락처는 나만 볼 수
         있어요
       </p>

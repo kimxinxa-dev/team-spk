@@ -17,6 +17,8 @@ export function DemoPhone() {
   const phoneRef = useRef<VirtualPhone | null>(null);
   const [sample, setSample] = useState<DemoSample>(DEMO_SAMPLES[0]);
   const [busy, setBusy] = useState(false);
+  // 휴대폰 폭에서는 시뮬레이션처럼 화면 가득 가상 휴대폰을 띄운다(PC는 CSS로 늘 보통 배치)
+  const [full, setFull] = useState(true);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
@@ -48,8 +50,59 @@ export function DemoPhone() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-[1fr_340px]">
-      <div className="space-y-4">
+    <div
+      className={`grid gap-6 md:grid-cols-[1fr_340px] ${full ? 'demo-full' : ''}`}
+    >
+      {full && (
+        <div className="space-y-1.5 md:hidden">
+          <div className="flex items-center gap-1.5 rounded-xl border-2 border-line bg-white p-1.5">
+            <label htmlFor="demo-sample" className="sr-only">
+              받아 볼 문자
+            </label>
+            <select
+              id="demo-sample"
+              value={sample.id}
+              onChange={(e) =>
+                setSample(
+                  DEMO_SAMPLES.find((s) => s.id === e.target.value) ??
+                    DEMO_SAMPLES[0],
+                )
+              }
+              className="min-h-10 min-w-0 flex-1 rounded-lg border-2 border-line bg-white px-2 text-base"
+            >
+              {DEMO_SAMPLES.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={receive}
+              disabled={busy}
+              className="min-h-10 rounded-lg bg-navy px-3 text-base font-bold whitespace-nowrap text-white disabled:opacity-60"
+            >
+              {busy ? '받는 중…' : '문자 받기'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFull(false)}
+              className="min-h-10 rounded-lg border-2 border-line bg-white px-3 text-base font-semibold whitespace-nowrap"
+            >
+              메뉴
+            </button>
+          </div>
+          {notice && !notice.ok && <Notice kind="error">{notice.text}</Notice>}
+        </div>
+      )}
+      <div className={`space-y-4 ${full ? 'max-md:hidden' : ''}`}>
+        <button
+          type="button"
+          onClick={() => setFull(true)}
+          className="min-h-12 w-full rounded-2xl border-2 border-navy bg-white text-lg font-bold text-navy md:hidden"
+        >
+          📱 휴대폰 화면 가득 보기
+        </button>
         <p className="text-lg">
           휴대폰을 마음대로 쓰다가 [체험 문자 받기]를 눌러 보세요. 문자가 오는
           순간 AI가 채점하고, 위험하면 경고 팝업이 떠요. 문자 앱에서 링크를
