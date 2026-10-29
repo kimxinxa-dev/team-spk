@@ -121,14 +121,293 @@
     outline: 3px solid var(--brand);
     outline-offset: 2px;
   }
+  .stage[hidden],
+  .lg[hidden] {
+    display: none;
+  }
+  .who {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .who b {
+    color: var(--fg);
+    word-break: break-all;
+  }
+  .who button {
+    margin-left: auto;
+    border: 1px solid var(--line);
+    background: none;
+    color: var(--fg);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  /* 로그인 화면(실제 앱 /login과 같은 모양) */
+  .lg {
+    color-scheme: light;
+    min-height: 100vh;
+    background: #f8fafc;
+    color: #18181b;
+    font-family:
+      'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui,
+      sans-serif;
+    font-size: 18px;
+    padding-block: 28px 40px;
+    padding-inline: 16px;
+  }
+  .lg-in {
+    max-width: 430px;
+    margin: 0 auto;
+  }
+  .lg-tag {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 3px 9px;
+    border-radius: 6px;
+  }
+  .lg-brand {
+    margin-top: 14px;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+  .lg-mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    box-shadow: 0 10px 22px rgba(29, 78, 216, 0.25);
+  }
+  .lg-brand h1 {
+    margin: 0;
+    font-size: 30px;
+  }
+  .lg-brand p {
+    margin: 0;
+    color: #3f3f46;
+    text-wrap: balance;
+  }
+  .lg-card {
+    margin-top: 26px;
+    background: #fff;
+    border: 2px solid #e4e4e7;
+    border-radius: 24px;
+    padding: 20px;
+  }
+  .lg-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: #f4f4f5;
+    border-radius: 16px;
+    padding: 4px;
+  }
+  .lg-tabs button {
+    min-height: 48px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    font: 700 18px inherit;
+    font-family: inherit;
+    color: #52525b;
+    cursor: pointer;
+  }
+  .lg-tabs button[aria-selected='true'] {
+    background: #fff;
+    color: #1d4ed8;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .lg form {
+    margin-top: 22px;
+    display: grid;
+    gap: 20px;
+  }
+  .lg label {
+    display: block;
+    font-weight: 700;
+  }
+  .lg label span {
+    font-weight: 400;
+    color: #52525b;
+  }
+  .lg-wrap {
+    position: relative;
+    margin-top: 8px;
+  }
+  .lg-ico {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #71717a;
+    display: grid;
+    pointer-events: none;
+  }
+  .lg input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 56px;
+    border: 2px solid #d4d4d8;
+    border-radius: 16px;
+    background: #fff;
+    font: 18px inherit;
+    font-family: inherit;
+    color: #18181b;
+    padding: 0 16px 0 48px;
+  }
+  .lg input::placeholder {
+    color: #a1a1aa;
+  }
+  .lg input:focus {
+    outline: none;
+    border-color: #1d4ed8;
+  }
+  .lg input[aria-invalid='true'] {
+    border-color: #dc2626;
+  }
+  .lg input.pw {
+    padding-right: 96px;
+  }
+  .lg-eye {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    min-height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1d4ed8;
+    cursor: pointer;
+  }
+  .lg-err {
+    margin: 6px 0 0;
+    font-size: 16px;
+    color: #b91c1c;
+  }
+  .lg-status {
+    margin: 0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 16px;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+  .lg-hint {
+    margin: -8px 0 0;
+    font-size: 16px;
+    color: #52525b;
+  }
+  .lg-hint button {
+    border: 0;
+    background: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1d4ed8;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .lg-submit {
+    min-height: 52px;
+    border: 0;
+    border-radius: 12px;
+    background: #1d4ed8;
+    color: #fff;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .lg-submit:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+  .lg-privacy {
+    margin: 22px 0 0;
+    text-align: center;
+    font-size: 16px;
+    color: #52525b;
+    text-wrap: balance;
+  }
+  .lg-note {
+    margin: 14px 0 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #52525b;
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
 </style>
 <link
   rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;700;800&display=swap"
 />
 
-<div class="stage">
+<section class="lg" id="login-view" aria-label="로그인">
+  <div class="lg-in">
+    <span class="lg-tag">시뮬레이션</span>
+    <div class="lg-brand">
+      <span class="lg-mark" aria-hidden="true"
+        ><svg viewBox="0 0 64 64" width="40" height="40">
+          <path
+            d="M32 6 54 14v16c0 14-9.5 24-22 28C19.5 54 10 44 10 30V14z"
+            fill="#fff"
+          />
+          <path
+            d="m22 32 7 7 14-15"
+            fill="none"
+            stroke="#1d4ed8"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          /></svg
+      ></span>
+      <h1>안심 지킴이</h1>
+      <p>문자·QR 사기를 먼저 막아 드려요</p>
+    </div>
+    <div class="lg-card" id="login-card"></div>
+    <p class="lg-privacy">
+      <span aria-hidden="true">🔒 </span>내 검사 기록과 연락처는 나만 볼 수
+      있어요
+    </p>
+    <p class="lg-note">
+      실제 앱과 같은 순서예요: 로그인하면 바로 휴대폰 화면(문자 지킴이 &gt;
+      실시간 감지)으로 넘어가요. 시뮬레이션이라 계정을 실제로 만들지 않고, 넣은
+      내용은 어디에도 저장되지 않아요. 로그인 실패 장면은 비밀번호에
+      <b>wrongpass</b>를 넣어 보세요.
+    </p>
+  </div>
+</section>
+
+<div class="stage" id="sim-view" hidden>
   <aside class="ctrl" id="ctrl" aria-label="문자 받기">
+    <p class="who">
+      <span aria-hidden="true">👤</span><b id="who"></b
+      ><button type="button" id="logout">로그아웃</button>
+    </p>
     <h1 id="ctrl-title">📩 문자 받기</h1>
     <p id="ctrl-desc">원할 때 눌러서 휴대폰에 문자를 보내요.</p>
     <label for="sample" id="ctrl-label">어떤 문자?</label>
@@ -148,8 +427,8 @@
       style="width: 100%; display: grid; justify-items: center"
     ></div>
     <p class="hint">
-      휴대폰을 자유롭게 쓰다가 왼쪽 [문자 받기]를 눌러 보세요. 카메라 앱에서는
-      [QR 코드 받기]로 바뀌어요. 홈 화면의 🛡️
+      로그인한 뒤의 화면이에요. 휴대폰을 자유롭게 쓰다가 왼쪽 [문자 받기]를 눌러
+      보세요. 카메라 앱에서는 [QR 코드 받기]로 바뀌어요. 홈 화면의 🛡️
       <b>안심 지킴이</b> 앱에서 실시간 감지 기록·QR 검사·붙여 넣어 검사를 할 수
       있어요.
     </p>
@@ -216,6 +495,138 @@
   sel.innerHTML = Sim.DEMO_SAMPLES.map(
     (s) => `<option value="${s.id}">${s.label}</option>`,
   ).join('');
+  // ---------- 로그인 화면(실제 앱 /login과 같은 규칙) ----------
+  const LG_MAIL =
+    '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+  const LG_LOCK =
+    '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+  const lgEsc = (s) =>
+    String(s).replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[c],
+    );
+  const lg = {
+    mode: 'signIn',
+    show: false,
+    errors: {},
+    status: null,
+    authFail: false,
+    busy: false,
+    values: { email: '', password: '', passwordConfirm: '' },
+  };
+  function lgField(id, label, hint, icon, type, extra) {
+    const err = lg.errors[id];
+    return `<div>
+      <label for="lg-${id}">${label}${hint ? ` <span>${hint}</span>` : ''}</label>
+      <div class="lg-wrap"><span class="lg-ico">${icon}</span>
+        <input id="lg-${id}" data-field="${id}" type="${type}" ${id === 'email' ? '' : 'class="pw"'} value="${lgEsc(lg.values[id])}" ${extra}
+          ${err ? 'aria-invalid="true"' : ''} aria-describedby="lg-${id}-error">
+        ${id === 'password' ? `<button type="button" class="lg-eye" data-lg-eye aria-pressed="${lg.show}">${lg.show ? '숨기기' : '👁 보기'}</button>` : ''}
+      </div>
+      ${err ? `<p class="lg-err" id="lg-${id}-error">${lgEsc(err)}</p>` : ''}
+    </div>`;
+  }
+  function lgRender(focusId) {
+    const up = lg.mode === 'signUp';
+    const t = lg.show ? 'text' : 'password';
+    document.getElementById('login-card').innerHTML = `
+      <div class="lg-tabs" role="tablist" aria-label="로그인 또는 가입">
+        <button type="button" role="tab" data-lg-tab="signIn" aria-selected="${!up}">로그인</button>
+        <button type="button" role="tab" data-lg-tab="signUp" aria-selected="${up}">가입하기</button>
+      </div>
+      <form id="lg-form" novalidate>
+        ${lgField('email', '이메일', '', LG_MAIL, 'email', 'inputmode="email" autocomplete="email" placeholder="예: hong@naver.com"')}
+        ${lgField('password', '비밀번호', '(8자 이상)', LG_LOCK, t, `autocomplete="${up ? 'new-password' : 'current-password'}"`)}
+        ${up ? lgField('passwordConfirm', '비밀번호 한 번 더', '', LG_LOCK, t, 'autocomplete="new-password"') : ''}
+        ${lg.status ? `<p class="lg-status" role="alert">${lgEsc(lg.status)}</p>` : ''}
+        ${!up && lg.authFail ? '<p class="lg-hint">처음 오셨다면 위의 <button type="button" data-lg-tab="signUp">가입하기</button>를 눌러 주세요.</p>' : ''}
+        <button class="lg-submit" type="submit" ${lg.busy ? 'disabled' : ''}>${lg.busy ? (up ? '가입하는 중…' : '로그인하는 중…') : up ? '가입하고 시작하기' : '로그인'}</button>
+      </form>`;
+    if (focusId) document.getElementById(`lg-${focusId}`)?.focus();
+  }
+  function showSim(email) {
+    document.getElementById('who').textContent = email;
+    document.getElementById('login-view').hidden = true;
+    document.getElementById('sim-view').hidden = false;
+    window.scrollTo(0, 0);
+  }
+  function showLogin() {
+    lg.mode = 'signIn';
+    lg.show = false;
+    lg.errors = {};
+    lg.status = null;
+    lg.authFail = false;
+    lg.values.password = '';
+    lg.values.passwordConfirm = '';
+    document.getElementById('sim-view').hidden = true;
+    document.getElementById('login-view').hidden = false;
+    lgRender('email');
+  }
+  const lgCard = document.getElementById('login-card');
+  lgCard.addEventListener('input', (e) => {
+    const f = e.target.dataset?.field;
+    if (f) lg.values[f] = e.target.value;
+  });
+  lgCard.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.lgTab) {
+      lg.mode = b.dataset.lgTab;
+      lg.show = false;
+      lg.errors = {};
+      lg.status = null;
+      lg.authFail = false;
+      lg.values.password = '';
+      lg.values.passwordConfirm = '';
+      lgRender();
+    } else if ('lgEye' in b.dataset) {
+      lg.show = !lg.show;
+      lgRender('password');
+    }
+  });
+  lgCard.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const up = lg.mode === 'signUp';
+    const schema = up ? Sim.signUpSchema : Sim.authSchema;
+    const parsed = schema.safeParse(
+      up ? lg.values : { email: lg.values.email, password: lg.values.password },
+    );
+    lg.authFail = false;
+    if (!parsed.success) {
+      lg.errors = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? 'form');
+        lg.errors[key] ??= issue.message;
+      }
+      lg.status = '입력한 내용을 확인해 주세요.';
+      return lgRender(Object.keys(lg.errors)[0]);
+    }
+    lg.errors = {};
+    lg.status = null;
+    lg.busy = true;
+    lgRender();
+    setTimeout(() => {
+      lg.busy = false;
+      if (!up && lg.values.password === 'wrongpass') {
+        lg.status = '이메일 또는 비밀번호가 맞지 않습니다.';
+        lg.authFail = true;
+        lg.values.password = '';
+        return lgRender('password');
+      }
+      lgRender();
+      showSim(lg.values.email);
+    }, 700);
+  });
+  document.getElementById('logout').onclick = showLogin;
+  lgRender();
+
   document.getElementById('recv').onclick = () => {
     if (panel === 'qr') return phone.showQr(Number(sel.value));
     const custom = document.getElementById('custom').value.trim();
