@@ -38,3 +38,32 @@ const dateFormat = new Intl.DateTimeFormat('ko-KR', {
 export function formatKst(date: Date) {
   return dateFormat.format(date);
 }
+
+const TAG_STYLE: Record<Risk, string> = {
+  DANGER: 'bg-red-100 text-red-800',
+  CAUTION: 'bg-amber-100 text-amber-900',
+  SAFE: 'bg-green-100 text-green-800',
+};
+
+/** 위험하다고 본 이유를 짧은 태그로 보여 준다(긴 문장 목록보다 한눈에 읽기 쉽게). */
+export function ReasonTags({
+  level,
+  reasons,
+}: {
+  level: Risk;
+  reasons: string[];
+}) {
+  if (reasons.length === 0) return null;
+  return (
+    <ul aria-label="이렇게 판단한 이유" className="flex flex-wrap gap-2">
+      {reasons.map((reason) => (
+        <li
+          key={reason}
+          className={`rounded-full px-3 py-1 text-base font-bold ${TAG_STYLE[level]}`}
+        >
+          {reason}
+        </li>
+      ))}
+    </ul>
+  );
+}

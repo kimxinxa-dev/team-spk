@@ -36,3 +36,35 @@ body {
   outline: 3px solid #1d4ed8;
   outline-offset: 2px;
 }
+
+/* 체험용 QR 찍기: 손에 든 것처럼 살짝 흔들리는 안내판과 위아래로 움직이는 인식 줄 */
+@keyframes qr-sway {
+  0%,
+  100% {
+    transform: rotate(-2deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2deg) translateY(-4px);
+  }
+}
+
+@keyframes scan-line {
+  from {
+    top: 2.5rem;
+  }
+  to {
+    top: calc(100% - 4rem);
+  }
+}
+
+/* 결과 창이 아래에서 올라오는 움직임 */
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

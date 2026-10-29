@@ -40,3 +40,54 @@ export const DEMO_SAMPLES: DemoSample[] = [
     content: '엄마 오늘 저녁 7시쯤 들어갈게요. 반찬 뭐 사 갈까요?',
   },
 ];
+
+export type DemoQr = {
+  /** 이 QR이 붙어 있던 곳(체험 화면의 안내판 글) */
+  place: string;
+  title: string;
+  content: string;
+};
+
+/** 체험용 QR. 주소는 모두 가짜(demo·example)다. */
+export const DEMO_QR_CODES: DemoQr[] = [
+  {
+    place: '아파트 게시판 전단지',
+    title: '무료 건강검진 신청',
+    content: 'https://bit.ly/demo-health',
+  },
+  {
+    place: '공영 주차장 기둥',
+    title: '주차 요금 간편 결제',
+    content: 'http://192.168.0.10/pay',
+  },
+  {
+    place: '현관문 택배 스티커',
+    title: '배송 조회 · 앱 설치',
+    content: 'https://parcel-demo.xyz/track.apk',
+  },
+  {
+    place: '우편함 안내문',
+    title: '지원금 신청 바로가기',
+    content: 'https://xn--80ak6aa92e.cc/apply',
+  },
+  {
+    place: '식당 테이블',
+    title: '메뉴판 보기',
+    content: 'https://www.example.com/menu',
+  },
+  {
+    place: '복지관 게시판',
+    title: '이번 달 프로그램 안내',
+    content: 'https://www.example.org/program',
+  },
+];
+
+/** 바로 전과 다른 체험용 QR을 고른다. */
+export function pickDemoQr(previous: number | null): number {
+  if (DEMO_QR_CODES.length < 2) return 0;
+  let next = previous;
+  while (next === previous) {
+    next = Math.floor(Math.random() * DEMO_QR_CODES.length);
+  }
+  return next as number;
+}

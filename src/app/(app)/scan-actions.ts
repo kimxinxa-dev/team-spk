@@ -67,13 +67,25 @@ export async function createMessageScan(
   };
 }
 
-export async function createQrScan(
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
+/** 바로 결과 창에 띄우는 QR 검사의 결과 */
+export type CheckResult =
+  | { ok: true; riskLevel: Risk; reasons: string[] }
+  | { ok: false; message: string };
+
+/**
+ * QR 검사(카메라·체험용 QR·직접 입력 공통): 주소는 열지 않고 판별해 내 기록으로 저장하고, 결과 창에 띄울 결과를 돌려준다.
+ * 화면에서 보낸 내용도 서버에서 다시 검증한다.
+ */
+export async function createQrScan(input: unknown): Promise<CheckResult> {
   const user = await requireUser();
-  const parsed = qrScanSchema.safeParse({ content: formData.get('content') });
-  if (!parsed.success) return invalidResult(parsed.error);
+  const parsed = qrScanSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message:
+        parsed.error.issues[0]?.message ?? 'QR 코드를 검사하지 못했습니다.',
+    };
+  }
 
   try {
     const result = analyzeScan(
@@ -92,15 +104,15 @@ export async function createQrScan(
         reasons: result.reasons,
       },
     });
+    revalidateScanPages();
+    return { ok: true, riskLevel: result.riskLevel, reasons: result.reasons };
   } catch {
     console.error('[createQrScan] insert failed');
-    return FAILED_RESULT;
+    return {
+      ok: false,
+      message: '검사하지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
+    };
   }
-  revalidateScanPages();
-  return {
-    ok: true,
-    message: 'QR 검사를 마쳤습니다. 아래 기록에서 결과를 보세요.',
-  };
 }
 
 export type DemoScanResult =
