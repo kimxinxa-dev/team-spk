@@ -24,3 +24,19 @@ export function getDatabaseEnv() {
 
   return result.data;
 }
+
+// Supabase Auth용 공개 값(URL·publishable 키). 비밀 키(secret/service_role)는 여기에 두지 않는다.
+const supabaseEnvSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
+});
+
+/** 설정되지 않았으면 null — 화면이 "로그인 설정 필요" 안내를 보여 준다. */
+export function getSupabaseEnv() {
+  const result = supabaseEnvSchema.safeParse({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  });
+  return result.success ? result.data : null;
+}
