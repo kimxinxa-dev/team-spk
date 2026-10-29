@@ -2,6 +2,7 @@
 // 실제 앱의 채점 AI·안내 목록·키오스크 시나리오를 그대로 쓰고, 기록은 이 페이지 안에만 둔다.
 import {
   escapeHtml as esc,
+  PHONE_ICONS as I,
   phoneBar,
   type Analysis,
   type PhoneApp,
@@ -196,8 +197,8 @@ export function createGuardianApp(opts: {
   const app: PhoneApp = {
     id: 'guardian',
     label: '안심 지킴이',
-    icon: '🛡️',
-    bg: '#1d4ed8',
+    icon: I.shield,
+    bg: 'linear-gradient(160deg,#3b82f6,#1e40af)',
     render(view, data, ctx) {
       void ctx;
       if (view === 'main') {
@@ -205,12 +206,19 @@ export function createGuardianApp(opts: {
           (r) => r.result.riskLevel === 'DANGER',
         ).length;
         return {
-          html: `${phoneBar('안심 지킴이')}<div class="vp-pad"><div class="vp-card" style="background:#1d4ed8;color:#fff"><b style="font-size:1.1em">🛡️ 문자 지킴이 켜짐</b><span>문자·카톡이 오면 바로 검사해요. 검사 ${records.length}건 · 위험 ${danger}건</span></div></div>
+          html: `<div style="background:linear-gradient(160deg,#2563eb,#1e3a8a);padding-bottom:18px;border-radius:0 0 28px 28px">
+              <div class="vp-appbar"><button data-act="back" aria-label="뒤로" style="border:0;background:none;color:#fff;cursor:pointer;padding:0;width:32px;height:32px;display:grid;place-items:center">←</button>${I.shield}<b>안심 지킴이</b></div>
+              <div style="margin:0 14px;padding:14px;border-radius:22px;background:rgba(255,255,255,.14);color:#fff;display:grid;gap:4px">
+                <span style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.05em"><span style="width:10px;height:10px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.3)"></span>문자 지킴이 켜짐</span>
+                <span style="opacity:.9">문자·카톡이 오면 바로 검사해요</span>
+                <span style="display:flex;gap:16px;margin-top:6px"><span><b style="font-size:1.5em">${records.length}</b> 검사</span><span><b style="font-size:1.5em;color:#fca5a5">${danger}</b> 위험 막음</span></span>
+              </div></div>
+            <div class="vp-sub">기능</div>
             <div class="vp-menu" style="padding-top:0">
-              <button data-act="x:guardian:go" data-arg="guard"><i>🛡️</i><span><b>문자 지킴이</b><small>검사 기록 · 붙여 넣어 검사</small></span></button>
-              <button data-act="x:guardian:go" data-arg="qr"><i>📷</i><span><b>QR 검사</b><small>찍기 전에 위험한 주소인지 확인</small></span></button>
-              <button data-act="x:guardian:go" data-arg="ask"><i>🎤</i><span><b>말로 물어보기</b><small>누를 곳을 노란 테두리로 안내</small></span></button>
-              <button data-act="x:guardian:go" data-arg="kiosk"><i>🍽️</i><span><b>키오스크 연습</b><small>음식점·병원·기차역</small></span></button></div>`,
+              <button data-act="x:guardian:go" data-arg="guard"><i style="background:#2563eb">${I.shield}</i><span><b>문자 지킴이</b><small>검사 기록 · 붙여 넣어 검사</small></span><span class="chev" style="color:#c4c7cf;flex:none">${I.chevron}</span></button>
+              <button data-act="x:guardian:go" data-arg="qr"><i style="background:#0ea5e9">${I.camera}</i><span><b>QR 검사</b><small>찍기 전에 위험한 주소인지 확인</small></span><span style="color:#c4c7cf;flex:none">${I.chevron}</span></button>
+              <button data-act="x:guardian:go" data-arg="ask"><i style="background:#f59e0b">${I.mic}</i><span><b>말로 물어보기</b><small>누를 곳을 노란 테두리로 안내</small></span><span style="color:#c4c7cf;flex:none">${I.chevron}</span></button>
+              <button data-act="x:guardian:go" data-arg="kiosk"><i style="background:#ef4444">${I.keypad}</i><span><b>키오스크 연습</b><small>음식점·병원·기차역</small></span><span style="color:#c4c7cf;flex:none">${I.chevron}</span></button></div>`,
         };
       }
       if (view === 'guard')
@@ -240,7 +248,7 @@ export function createGuardianApp(opts: {
         };
       if (view === 'kiosk')
         return {
-          html: `${phoneBar('키오스크 연습')}<div class="vp-menu">${opts.scenarios.map((s) => `<button data-act="x:guardian:k-pick" data-arg="${s.type}"><i>${s.icon}</i><span><b>${esc(s.name)}</b><small>${s.steps.length}단계 · ${esc(s.brand)}</small></span></button>`).join('')}</div>`,
+          html: `${phoneBar('키오스크 연습')}<div class="vp-menu">${opts.scenarios.map((s) => `<button data-act="x:guardian:k-pick" data-arg="${s.type}"><i style="background:${KCOLOR[s.type]}">${s.icon}</i><span><b>${esc(s.name)}</b><small>${s.steps.length}단계 · ${esc(s.brand)}</small></span></button>`).join('')}</div>`,
         };
       if (view === 'k' && k.sc)
         return {
