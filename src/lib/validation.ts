@@ -15,6 +15,14 @@ export const authSchema = z.object({
     .max(72, '비밀번호는 72자 이하로 입력해 주세요.'),
 });
 
+/** 가입: 비밀번호를 한 번 더 넣어 잘못 친 비밀번호로 가입하지 않게 한다. */
+export const signUpSchema = authSchema
+  .extend({ passwordConfirm: z.string() })
+  .refine((data) => data.password === data.passwordConfirm, {
+    path: ['passwordConfirm'],
+    message: '비밀번호가 서로 달라요. 다시 확인해 주세요.',
+  });
+
 export const messageScanSchema = z.object({
   content: z
     .string()

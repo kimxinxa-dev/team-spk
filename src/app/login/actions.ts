@@ -3,12 +3,15 @@
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { authSchema } from '@/lib/validation';
+import { authSchema, signUpSchema } from '@/lib/validation';
 import {
   FAILED_RESULT,
   invalidResult,
   type ActionResult,
 } from '@/lib/action-result';
+
+/** 로그인·가입하면 바로 가상 휴대폰(문자 지킴이 > 실시간 감지 탭)으로 간다. */
+const AFTER_LOGIN = '/check?tab=demo';
 
 const NOT_CONFIGURED: ActionResult = {
   ok: false,
@@ -48,23 +51,27 @@ export async function signIn(
     console.error('[signIn] app user upsert failed');
     return FAILED_RESULT;
   }
-  redirect('/home');
+  redirect(AFTER_LOGIN);
 }
 
 export async function signUp(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const parsed = authSchema.safeParse({
+  const parsed = signUpSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
+    passwordConfirm: formData.get('passwordConfirm'),
   });
   if (!parsed.success) return invalidResult(parsed.error);
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NOT_CONFIGURED;
 
-  const { data, error } = await supabase.auth.signUp(parsed.data);
+  const { data, error } = await supabase.auth.signUp({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
   if (error || !data.user) {
     // 이미 가입한 이메일인지 등 자세한 이유는 알려 주지 않는다(계정 존재 여부 노출 방지).
     return { ok: false, message: '가입하지 못했습니다. 입력을 확인해 주세요.' };
@@ -84,7 +91,7 @@ export async function signUp(
     console.error('[signUp] app user upsert failed');
     return FAILED_RESULT;
   }
-  redirect('/home');
+  redirect(AFTER_LOGIN);
 }
 
 export async function signOut() {
