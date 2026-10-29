@@ -50,8 +50,9 @@ function siteOf(content: string) {
   }
 }
 
-function safeLink(content: string, result: CheckResult | null) {
-  if (!result?.ok || result.riskLevel !== 'SAFE') return null;
+/** 열 수 있는 주소: 안전이면 바로, 주의면 한 번 더 물은 뒤. 위험은 열지 않는다. */
+function openableLink(content: string, result: CheckResult | null) {
+  if (!result?.ok || result.riskLevel === 'DANGER') return null;
   try {
     const url = new URL(content);
     return url.protocol === 'https:' ? url.href : null;
@@ -74,6 +75,8 @@ export function QrScanner() {
   const [checked, setChecked] = useState<string | null>(null);
   const [result, setResult] = useState<CheckResult | null>(null);
   const [pending, startTransition] = useTransition();
+  /** 주의 QR에서 [그래도 열기]를 눌러 한 번 더 묻는 중인지 */
+  const [askOpen, setAskOpen] = useState(false);
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -98,6 +101,7 @@ export function QrScanner() {
   }
 
   const closeResult = useCallback(() => {
+    setAskOpen(false);
     setChecked(null);
     setResult(null);
     setDemoIndex(null);
@@ -166,7 +170,8 @@ export function QrScanner() {
 
   const demo = demoIndex === null ? null : DEMO_QR_CODES[demoIndex];
   const busy = pending || demo !== null || camera === 'starting';
-  const link = checked ? safeLink(checked, result) : null;
+  const link = checked ? openableLink(checked, result) : null;
+  const caution = result?.ok === true && result.riskLevel === 'CAUTION';
 
   return (
     <div className="mt-5 space-y-5">
@@ -323,7 +328,8 @@ export function QrScanner() {
           blockedSite={siteOf(checked) ?? undefined}
           quote={checked}
           extraAction={
-            link && (
+            link &&
+            (!caution ? (
               <a
                 href={link}
                 target="_blank"
@@ -332,7 +338,45 @@ export function QrScanner() {
               >
                 이 주소 열기
               </a>
-            )
+            ) : !askOpen ? (
+              <button
+                type="button"
+                onClick={() => setAskOpen(true)}
+                className="min-h-12 rounded-2xl text-base font-bold text-zinc-500 underline"
+              >
+                그래도 열기
+              </button>
+            ) : (
+              <div
+                role="alertdialog"
+                aria-label="정말 이 주소를 여시겠어요?"
+                className="mt-2 grid gap-2 rounded-2xl border-2 border-amber-500 bg-amber-50 p-4"
+              >
+                <p className="text-lg font-bold text-amber-900">
+                  정말 이 주소를 여시겠어요?
+                </p>
+                <p className="text-base text-amber-900">
+                  열린 화면에서 이름·비밀번호·계좌번호를 넣지 마세요.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAskOpen(false)}
+                    className="min-h-12 rounded-xl bg-zinc-900 text-base font-bold text-white"
+                  >
+                    열지 않을래요
+                  </button>
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-h-12 items-center justify-center rounded-xl border-2 border-amber-600 text-base font-bold text-amber-900"
+                  >
+                    열기
+                  </a>
+                </div>
+              </div>
+            ))
           }
           onClose={closeResult}
         />

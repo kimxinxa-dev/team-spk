@@ -87,6 +87,7 @@ type SmsLine = { from: string; text: string; risk?: Analysis };
 type Overlay =
   | { kind: 'warn'; msg: IncomingMessage; result: Analysis }
   | { kind: 'qr-warn'; content: string; place: string; result: Analysis }
+  | { kind: 'qr-confirm'; content: string }
   | { kind: 'blocked' }
   | { kind: 'install-guard' }
   | { kind: 'msg-menu'; text: string };
@@ -433,6 +434,7 @@ const CSS = `
 .vp-zoom span.on{background:rgba(255,255,255,.3);color:#fcd34d;font-size:12.5px}
 .vp-modes{flex:none;display:flex;justify-content:center;gap:18px;padding:6px 0;background:#000;color:#9ca3af;font-size:.85em;font-weight:700}
 .vp-modes .on{color:#fcd34d}
+.vp-askopen{border:0;background:none;color:#6b7280;font:inherit;font-size:.85em;font-weight:700;text-decoration:underline;cursor:pointer;padding:6px;justify-self:center}
 .vp-blockln{display:grid;gap:2px;border:2px solid;border-radius:14px;padding:10px 12px}
 .vp-blockln b{font-size:1.05em}
 .vp-blockln span{font-size:.85em;font-weight:700;word-break:break-all;opacity:.85}
@@ -834,7 +836,8 @@ export class VirtualPhone {
           this.camQr = { ...this.camQr, judged: true, html: scanned.html };
           // 위험·주의면 틀이 조여진 뒤 문자 판독과 같은 경고 팝업을 띄운다.
           if (scanned.result.riskLevel !== 'SAFE') {
-            this.blockedHosts.add(hostOf(scanned.content));
+            if (scanned.result.riskLevel === 'DANGER')
+              this.blockedHosts.add(hostOf(scanned.content));
             const index = this.camQr.index;
             setTimeout(() => {
               if (this.camQr?.index !== index || !this.camQr.judged) return;
@@ -920,6 +923,9 @@ export class VirtualPhone {
       case 'qr-open':
         this.overlay = null;
         return this.openLink(arg, '');
+      case 'qr-ask':
+        this.overlay = { kind: 'qr-confirm', content: arg };
+        return;
       case 'qr-next':
         this.overlay = null;
         return this.aimQr();
@@ -1322,13 +1328,21 @@ export class VirtualPhone {
         <div class="hd"><i style="background:${t.color}">${PHONE_ICONS.shield}</i><span><small>안심 지킴이 · 카메라로 찍은 QR</small><h4 style="color:${t.color}">${QR_RISK_TITLE[ov.result.riskLevel]}</h4></span></div>
         <div style="display:flex;justify-content:space-between;font-weight:700;font-size:.9em"><span>위험도</span><span style="color:${t.color}">${ov.result.score}%</span></div>
         <div class="meter"><b style="width:${Math.max(4, ov.result.score)}%;background:${t.color}"></b></div>
-        <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>🔒 링크 접속을 차단했어요</b><span>${esc(hostOf(ov.content))}</span></div>
+        <div class="vp-blockln" style="background:${t.soft};border-color:${t.color};color:${t.color}"><b>${ov.result.riskLevel === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(hostOf(ov.content))}</span></div>
         <ul>${ov.result.reasons
           .slice(0, 3)
           .map((r) => `<li>${esc(r)}</li>`)
           .join('')}</ul>
         <div class="tip">${esc(ov.place)}에 붙어 있던 QR이에요.</div>
-        <div class="btns"><button data-act="qr-next">다른 QR 비추기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
+        <div class="btns"><button data-act="qr-next">다른 QR 비추기</button><button class="main" data-act="ov-close">알겠어요</button></div>
+        ${ov.result.riskLevel === 'CAUTION' && /^https?:\/\//i.test(ov.content) ? `<button class="vp-askopen" data-act="qr-ask" data-arg="${esc(ov.content)}">그래도 열기</button>` : ''}</div></div>`;
+    }
+    if (ov.kind === 'qr-confirm') {
+      return `<div class="vp-ov" role="alertdialog" aria-label="정말 이 주소를 여시겠어요?"><div class="vp-pop" style="color:#18181b">
+        <div class="hd"><i style="background:${RISK_TEXT.CAUTION.color}">${PHONE_ICONS.shield}</i><span><small>안심 지킴이</small><h4 style="color:${RISK_TEXT.CAUTION.color}">정말 이 주소를 여시겠어요?</h4></span></div>
+        <div class="vp-blockln" style="background:${RISK_TEXT.CAUTION.soft};border-color:${RISK_TEXT.CAUTION.color};color:${RISK_TEXT.CAUTION.color}"><b>조심해야 할 주소예요</b><span>${esc(hostOf(ov.content))}</span></div>
+        <div class="tip">열린 화면에서 이름·비밀번호·계좌번호를 넣지 마세요.</div>
+        <div class="btns"><button class="main" data-act="ov-close">열지 않을래요</button><button data-act="qr-open" data-arg="${esc(ov.content)}">열기</button></div></div></div>`;
     }
     if (ov.kind === 'msg-menu') {
       return `<div class="vp-ov" data-act="ov-close" role="dialog" aria-label="문자 메뉴"><div class="vp-pop" data-act="noop"><span class="tip" style="max-height:96px;overflow:hidden">${esc(ov.text)}</span>

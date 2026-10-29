@@ -91,7 +91,7 @@ export function VerdictSheet({
   quoteLabel: string;
   /** 제목 오른쪽의 보조 글(예: 보낸 번호) */
   quoteAside?: string;
-  /** 주의·위험이라 접속을 막은 사이트 이름. 있으면 "링크 접속을 차단했어요"를 판단 이유보다 먼저 보여 준다. */
+  /** QR 안의 사이트 이름. 위험이면 "링크 접속을 차단했어요", 주의면 "바로 열지 않았어요"를 판단 이유보다 먼저 보여 준다. */
   blockedSite?: string;
   quote: string;
   /** [확인했어요] 아래에 붙는 보조 버튼(예: 안전한 QR의 "이 주소 열기") */
@@ -176,7 +176,11 @@ export function VerdictSheet({
                 <p
                   className={`mt-5 grid gap-0.5 rounded-2xl border-2 px-4 py-3 ${BLOCK[result.riskLevel]}`}
                 >
-                  <b className="text-lg">🔒 링크 접속을 차단했어요</b>
+                  <b className="text-lg">
+                    {result.riskLevel === 'DANGER'
+                      ? '🔒 링크 접속을 차단했어요'
+                      : '⚠️ 바로 열지 않았어요'}
+                  </b>
                   <span className="text-sm font-bold break-all opacity-85">
                     {blockedSite}
                   </span>

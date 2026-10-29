@@ -17,7 +17,7 @@ type Rec = {
   text: string;
   result: Analysis;
   verdict: 'SCAM' | 'SAFE' | null;
-  /** QR 판독이 주의·위험이라 그 주소를 막았는지 */
+  /** QR 판독이 위험이라 그 주소를 막았는지 */
   blocked?: boolean;
 };
 
@@ -220,10 +220,10 @@ export function createGuardianApp(opts: {
       ? `<div class="gq-cover"><div class="gq-sheet" role="alertdialog" aria-label="${QR_TEXT[lv].title}">
           <div class="gq-hero" style="background:${t.tint}"><span class="gq-ico" style="background:${t.solid}"><svg viewBox="0 0 24 24" aria-hidden="true">${GLYPH[lv]}</svg></span>
             <small style="color:${t.word}">${LABEL[lv]} · 위험도 ${r.result.score}%</small><b>${QR_TEXT[lv].title}</b><span>${QR_TEXT[lv].advice}</span></div>
-          ${lv !== 'SAFE' ? `<div class="gq-block" style="background:${t.tint};border-color:${t.solid};color:${t.word}"><b>🔒 링크 접속을 차단했어요</b><span>${esc(siteOf(q.content))}</span></div>` : ''}
+          ${lv !== 'SAFE' ? `<div class="gq-block" style="background:${t.tint};border-color:${t.solid};color:${t.word}"><b>${lv === 'DANGER' ? '🔒 링크 접속을 차단했어요' : '⚠️ 바로 열지 않았어요'}</b><span>${esc(siteOf(q.content))}</span></div>` : ''}
           <div class="gq-sec"><span>찍은 QR 내용</span><span>${esc(q.place)}</span></div><div class="gq-msg">${esc(q.content)}</div>
           ${r.result.reasons.length ? `<div class="gq-sec"><span>왜 그런가요?</span></div><div class="gq-tags">${r.result.reasons.map((x) => `<span style="${t.tag}">${esc(x)}</span>`).join('')}</div>` : ''}
-          <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button>${lv === 'SAFE' && isWebLink(q.content) ? `<button style="background:none;color:#1d4ed8" data-act="qr-open" data-arg="${esc(q.content)}">이 주소 열기</button>` : ''}<button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
+          <div class="gq-acts"><button style="background:#18181b;color:#fff" data-act="back">확인했어요</button>${lv === 'SAFE' && isWebLink(q.content) ? `<button style="background:none;color:#1d4ed8" data-act="qr-open" data-arg="${esc(q.content)}">이 주소 열기</button>` : ''}${lv === 'CAUTION' && isWebLink(q.content) ? `<button style="background:none;color:#6b7280;text-decoration:underline;min-height:36px" data-act="qr-ask" data-arg="${esc(q.content)}">그래도 열기</button>` : ''}<button style="background:none;color:#1d4ed8" data-act="x:guardian:go" data-arg="guard">기록 보기</button></div>
         </div></div>`
       : '';
     // 카메라에서 위험·주의는 경고 팝업이 알리므로 주소 표시는 색을 바꾸지 않는다(정상만 초록).
@@ -350,7 +350,7 @@ export function createGuardianApp(opts: {
           const q = DEMO_QR_CODES[Number(arg)];
           if (!q) return;
           const r = add('QR 코드', q.content, opts.analyzeQr(q.content));
-          if (r.result.riskLevel !== 'SAFE') {
+          if (r.result.riskLevel === 'DANGER') {
             r.blocked = true;
             ctx.blockLink(q.content);
           }
@@ -380,7 +380,7 @@ export function createGuardianApp(opts: {
       if (!q) return null;
       const r = add('카메라 QR', q.content, opts.analyzeQr(q.content));
       // 주소를 막는 일은 카메라(엔진)가 맡는다. 기록에는 막았다고 남긴다.
-      if (r.result.riskLevel !== 'SAFE') r.blocked = true;
+      if (r.result.riskLevel === 'DANGER') r.blocked = true;
       return {
         html: qrScanView(r, index, false, true),
         result: r.result,
