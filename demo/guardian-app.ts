@@ -125,7 +125,7 @@ export function createGuardianApp(opts: {
         };
       if (view === 'paste')
         return {
-          html: `${phoneBar('붙여 넣어 검사')}<div class="vp-pad"><div class="vp-card"><b>받은 문자를 붙여 넣으세요</b><span style="font-size:.88em;color:#6b7280">문자를 길게 눌러 복사한 뒤 아래 칸에 붙여 넣으면 AI가 스미싱인지 판단해요.</span><textarea class="vp-field" rows="4" data-model="paste" placeholder="예: [OO은행] 계좌가 정지되었습니다 확인 bit.ly/xx">${esc(ctx.drafts.paste ?? '')}</textarea><button class="vp-btn" data-act="x:guardian:check">AI로 검사하기</button></div></div>`,
+          html: `${phoneBar('붙여 넣어 검사')}<div class="vp-pad"><div class="vp-card"><b>받은 문자를 붙여 넣으세요</b><span style="font-size:.88em;color:#6b7280">메시지 앱에서 문자를 눌러 [복사]한 뒤, 아래 [붙여넣기]를 누르면 AI가 스미싱인지 판단해요.</span><textarea class="vp-field" rows="4" data-model="paste" placeholder="예: [OO은행] 계좌가 정지되었습니다 확인 bit.ly/xx">${esc(ctx.drafts.paste ?? '')}</textarea><span style="display:flex;gap:8px"><button class="vp-btn" style="flex:1;background:#eef0f4;color:#111318" data-act="x:guardian:paste-clip">📋 붙여넣기</button><button class="vp-btn" style="flex:1" data-act="x:guardian:check">AI로 검사하기</button></span></div></div>`,
         };
       if (view === 'result') {
         const r = records.find((x) => x.id === Number(data));
@@ -145,6 +145,11 @@ export function createGuardianApp(opts: {
       switch (action) {
         case 'go':
           return ctx.push(arg);
+        case 'paste-clip':
+          if (!ctx.clipboard)
+            return ctx.toast('먼저 메시지 앱에서 문자를 눌러 복사해 주세요');
+          ctx.drafts.paste = ctx.clipboard;
+          return;
         case 'check': {
           const text = (ctx.drafts.paste ?? '').trim();
           if (text.length < 2) return ctx.toast('검사할 문자를 넣어 주세요');

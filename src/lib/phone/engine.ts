@@ -53,6 +53,8 @@ export type PhoneAppContext = {
   toast(text: string): void;
   /** 휴대폰 안 입력칸(data-model)의 현재 값 */
   drafts: Record<string, string>;
+  /** 휴대폰에서 마지막으로 복사한 글 */
+  clipboard: string;
 };
 
 /**
@@ -83,7 +85,8 @@ type SmsLine = { from: string; text: string; risk?: Analysis };
 type Overlay =
   | { kind: 'warn'; msg: IncomingMessage; result: Analysis }
   | { kind: 'blocked' }
-  | { kind: 'install-guard' };
+  | { kind: 'install-guard' }
+  | { kind: 'msg-menu'; text: string };
 
 const PHOTOS = ['👶', '🌸', '⛰️', '🍚', '🐶', '🌅'];
 /** 사진 칸 배경(실제 사진처럼 보이게 하는 색) */
@@ -386,6 +389,8 @@ const CSS = `
 .vp-line .who{width:34px;height:34px;border-radius:13px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:.8em;align-self:flex-start;flex:none}
 .vp-line .col{display:grid;gap:3px;max-width:72%}
 .vp-line .nm{font-size:.78em;color:#374151}
+.vp-msg[data-act]{cursor:pointer}
+.vp-msg[data-act]:active{filter:brightness(.92)}
 .vp-msg{padding:8px 12px;border-radius:4px 16px 16px 16px;background:#fff;line-height:1.45;word-break:break-all;box-shadow:0 1px 1px rgba(0,0,0,.05)}
 .vp-line.me .vp-msg{background:#fde68a;border-radius:16px 4px 16px 16px}
 .vp-chat.sms .vp-msg{background:#eef0f4;border-radius:18px 18px 18px 6px;box-shadow:none}
@@ -591,6 +596,7 @@ export class VirtualPhone {
   private blockedHosts = new Set<string>();
   private apps: PhoneApp[];
   private drafts: Record<string, string> = {};
+  private clipboard = '';
 
   constructor(
     root: HTMLElement,
@@ -699,6 +705,7 @@ export class VirtualPhone {
       back: () => this.back(),
       toast: (text) => this.toast(text),
       drafts: this.drafts,
+      clipboard: this.clipboard,
     };
   }
 
@@ -859,6 +866,25 @@ export class VirtualPhone {
         this.overlay = null;
         this.stack = [{ id: 'home' }];
         return this.toast('설치하지 않았어요. 잘하셨어요!');
+      case 'msg': {
+        const [where, idx] = arg.split('|');
+        const text =
+          where === 'sms'
+            ? this.sms[Number(idx)]?.text
+            : this.chats[where]?.[Number(idx)]?.text;
+        if (text) this.overlay = { kind: 'msg-menu', text };
+        return;
+      }
+      case 'copy': {
+        if (this.overlay?.kind !== 'msg-menu') return;
+        this.clipboard = this.overlay.text;
+        // 실제 기기의 클립보드에도 넣어 다른 곳에 붙여 넣을 수 있게 한다(막혀 있으면 휴대폰 안에서만 복사).
+        navigator.clipboard?.writeText(this.clipboard).catch(() => undefined);
+        this.overlay = null;
+        return this.toast('복사했어요');
+      }
+      case 'noop':
+        return;
       case 'install-anyway':
         this.overlay = null;
         return;
@@ -970,7 +996,7 @@ export class VirtualPhone {
               : esc(l.text ?? '');
             if (l.me)
               return `<div class="vp-line me"><div class="col"><div class="vp-msg">${body}</div></div><span class="tm">1<br>오전 10:3${i % 10}</span></div>`;
-            return `<div class="vp-line">${first ? `<span class="who" style="background:${this.contact(s.who)?.color ?? '#94a3b8'}">${esc(this.contact(s.who)?.initial ?? name.slice(0, 1))}</span>` : '<span style="width:34px;flex:none"></span>'}<div class="col">${first ? `<span class="nm">${esc(name)}</span>` : ''}<div class="vp-msg">${body}</div></div><span class="tm">오전 10:2${i % 10}</span></div>`;
+            return `<div class="vp-line">${first ? `<span class="who" style="background:${this.contact(s.who)?.color ?? '#94a3b8'}">${esc(this.contact(s.who)?.initial ?? name.slice(0, 1))}</span>` : '<span style="width:34px;flex:none"></span>'}<div class="col">${first ? `<span class="nm">${esc(name)}</span>` : ''}<div class="vp-msg" ${l.photo ? '' : `data-act="msg" data-arg="${esc(s.who)}|${i}" role="button" aria-label="메시지 메뉴 열기"`}>${body}</div></div><span class="tm">오전 10:2${i % 10}</span></div>`;
           })
           .join('');
         return {
@@ -1021,8 +1047,9 @@ export class VirtualPhone {
       }
       case 'sms-thread': {
         const lines = this.sms
-          .filter((l) => l.from === s.from)
-          .map((l, i) => {
+          .map((l, idx) => ({ l, idx }))
+          .filter(({ l }) => l.from === s.from)
+          .map(({ l, idx }, i) => {
             const body = esc(l.text).replace(
               LINK_RE,
               (m) =>
@@ -1032,7 +1059,7 @@ export class VirtualPhone {
               l.risk && l.risk.riskLevel !== 'SAFE'
                 ? `<span class="vp-riskband" style="background:${RISK_TEXT[l.risk.riskLevel].color}">${PHONE_ICONS.shield}안심 지킴이 · ${l.risk.riskLevel === 'DANGER' ? '사기 의심' : '주의'} 위험도 ${l.risk.score}%</span>`
                 : '';
-            return `<div class="vp-line"><div class="col">${band}<div class="vp-msg">${body}</div></div><span class="tm">오전 10:${20 + i}</span></div>`;
+            return `<div class="vp-line"><div class="col">${band}<div class="vp-msg" data-act="msg" data-arg="sms|${idx}" role="button" aria-label="문자 메뉴 열기">${body}</div></div><span class="tm">오전 10:${20 + i}</span></div>`;
           })
           .join('');
         return {
@@ -1209,6 +1236,10 @@ export class VirtualPhone {
           .join('')}</ul>
         <div class="tip">링크를 누르지 마세요. 돈·인증번호를 요구하면 가족에게 먼저 물어보세요.</div>
         <div class="btns"><button data-act="ov-view">문자 보기</button><button class="main" data-act="ov-close">알겠어요</button></div></div></div>`;
+    }
+    if (ov.kind === 'msg-menu') {
+      return `<div class="vp-ov" data-act="ov-close" role="dialog" aria-label="문자 메뉴"><div class="vp-pop" data-act="noop"><span class="tip" style="max-height:96px;overflow:hidden">${esc(ov.text)}</span>
+        <button class="main" data-act="copy">📋 복사</button><button data-act="ov-close">닫기</button></div></div>`;
     }
     if (ov.kind === 'blocked') {
       return `<div class="vp-full" role="alertdialog" aria-label="위험한 사이트를 막았어요"><span class="big">${PHONE_ICONS.shield}</span><h4>위험한 사이트를 막았어요</h4><p>사기 문자에 있던 사이트예요. 열지 않고 막았어요.<br>이름·비밀번호·계좌번호를 넣지 마세요.</p><button data-act="ov-close">알겠어요</button></div>`;

@@ -10,7 +10,7 @@
 ## 주요 기능
 | 과제의 꼭 있어야 하는 기능 | 화면(프론트엔드) | API(백엔드) |
 | --- | --- | --- |
-| 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도별 경고 팝업을 띄우고, 문자 속 위험한 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 감지 결과는 검사 기록으로 저장되고 "사기 맞아요/아니에요" 정답 알려 주기·메모 고치기·지우기 | `/check` 실시간 감지 탭 (`src/app/(app)/check/demo-phone.tsx`), 가상 휴대폰 `src/lib/phone/engine.ts` | Server Action `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
+| 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도별 경고 팝업을 띄우고, 문자 속 위험한 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 받은 문자는 말풍선을 눌러 복사할 수 있음. 감지 결과는 검사 기록으로 저장되고 "사기 맞아요/아니에요" 정답 알려 주기·메모 고치기·지우기 | `/check` 실시간 감지 탭 (`src/app/(app)/check/demo-phone.tsx`), 가상 휴대폰 `src/lib/phone/engine.ts` | Server Action `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
 | 2. QR 감지 — 카메라로 QR 코드를 찍으면 주소를 열지 않고 먼저 검사(단축 주소·수상한 도메인·http·앱 설치 파일 등)해 기록으로 저장, 카메라가 안 되면 직접 입력. 메모 고치기·지우기 | `/check` QR 검사 탭 (`src/app/(app)/check/QrScanner.tsx`) | Server Action `createQrScan`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 판별 `src/lib/scan/rules.ts` |
 | 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면(또는 문자 앱의 [공유]로 보내면) 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 사용자가 알려 준 정답을 학습 데이터에 더해 그 사람에게 맞춰 판단 | `/check` 붙여 넣기 탭 (`src/app/(app)/check/MessageCheckForm.tsx`) | Server Action `createMessageScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts` |
 
@@ -58,6 +58,8 @@
   - "ui를 좀 더 현실과 비슷하게 하고, 그리고 자유롭게 휴대폰을 구동할 수 있게 만들 수는 없을까요?"
   - "시뮬레이션 페이지에 메인이 스마트폰이 되게 해주고, 문자 수신 버튼은 원할 때 클릭해서 수신할 수 있게 작게 왼쪽에 넣어주세요. 그리고 다른 기능들은 스마트폰 안에서 선택해서 동작할 수 있게 어플을 스마트폰 다운된 것 처럼 해주시고, 모든 기능들 작동하게 넣어주세요"
   - "그러면 말로 요청하기와 키오스크 연습은 삭제하고 핵심기능은 스미싱 차단입니다. 첫번째 기능은 실시간 문자 인식 및 감지와 차단입니다. 두번째 기능은 qr감지이고, 세번째 기능은 수신된 문자를 복사하여 붙여넣으면 ai가 스미싱인지 아닌지 판단하는 기능입니다."
+  - "스미싱 팝업에 위험 점수를 위험도로 바꿔주시고 수치를 %로 표기해주세요"
+  - "수신된 문자도 스크랩(복사) 할 수 있게 수정해주세요"
 - AI가 만든 것 / 사람이 고친 것:
   - AI: 대회 사이트의 공개 설정에서 본선 규칙·심사 세부 기준을 찾아 [.agent/hackathon.md](.agent/hackathon.md) 작업 지침으로 정리, README 갱신 규칙 추가, DB·API 보안 사고 방지 점검표(비밀값·Supabase RLS·서버 권한 확인) 작성, 이 README 초안 작성
   - AI: 아이디어를 웹에서 가능한 범위로 검토(웹은 문자함 자동 읽기·휴대폰 설정 제어가 불가 → 공유하기·붙여 넣기 검사, 카메라 QR 검사, 음성으로 앱 기능·전화 앱 열기로 조정)하고 심사 기준에 맞춘 주요 기능 3개를 제안

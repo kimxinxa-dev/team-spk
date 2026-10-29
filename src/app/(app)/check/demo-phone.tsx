@@ -80,7 +80,8 @@ export function DemoPhone() {
           <Notice kind={notice.ok ? 'success' : 'error'}>{notice.text}</Notice>
         )}
         <p className="text-base text-muted">
-          체험용 가짜 문자예요. 실제로 받은 문자는 「문자 검사」 탭에 붙여
+          체험용 가짜 문자예요. 휴대폰의 메시지 앱에서 문자를 누르면 [복사]할 수
+          있어요. 복사한 문자나 실제로 받은 문자는 「붙여 넣기」 탭에 붙여
           넣거나 문자 앱의 [공유] → 안심 지킴이로 검사할 수 있어요.
         </p>
       </div>
