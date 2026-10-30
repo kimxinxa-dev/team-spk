@@ -11,7 +11,7 @@
 ## 주요 기능
 | 과제의 꼭 있어야 하는 기능 | 화면(프론트엔드) | API(백엔드) |
 | --- | --- | --- |
-| 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 [문자 받기]로 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도(%)별 경고 팝업을 띄우고, 위험한 문자 속 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 받은 문자는 말풍선을 눌러 복사할 수 있음. 감지 결과는 내 검사 기록으로 저장(넣기) → 안심 지킴이 > 실시간 감지 기록에서 목록·자세히 보기 → 새로 고쳐도 남음 → "사기 맞아요/아니에요"로 정답 고치기 → 지우기. 주의·위험 기록은 [🤖 AI 설명 보기]로 Claude가 이유·대처 방법을 정리(경고 팝업은 기다림 없이 학습 AI로 바로 띄우고, 설명은 원할 때만 받아 저장) | 첫 화면 `/` (`src/app/PhoneStage.tsx`), 안심 지킴이 > 실시간 감지 기록 `/?app=guardian&view=guard` (`src/lib/phone/guardian-app.ts`), 가상 휴대폰 `src/lib/phone/engine.ts`. PC용 `/check` 실시간 감지 탭(`src/app/(app)/check/demo-phone.tsx`)도 있음 | Server Action `phoneSaveScan`(서버에서 다시 채점·저장)·`phoneListScans`·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), PC용 `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
+| 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 [문자 받기]로 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도(%)별 경고 팝업을 띄우고, 위험한 문자 속 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 받은 문자는 말풍선을 눌러 복사할 수 있음. 감지 결과는 내 검사 기록으로 저장(넣기) → 안심 지킴이 > 실시간 감지 기록에서 목록·자세히 보기 → 새로 고쳐도 남음 → "사기 맞아요/아니에요"로 정답 고치기 → 지우기. [모두 지우기]는 확인 창(취소 가능)을 거쳐 내 기록만 한 번에 지움. 주의·위험 기록은 [🤖 AI 설명 보기]로 Claude가 이유·대처 방법을 정리(경고 팝업은 기다림 없이 학습 AI로 바로 띄우고, 설명은 원할 때만 받아 저장) | 첫 화면 `/` (`src/app/PhoneStage.tsx`), 안심 지킴이 > 실시간 감지 기록 `/?app=guardian&view=guard` (`src/lib/phone/guardian-app.ts`), 가상 휴대폰 `src/lib/phone/engine.ts`. PC용 `/check` 실시간 감지 탭(`src/app/(app)/check/demo-phone.tsx`)도 있음 | Server Action `phoneSaveScan`(서버에서 다시 채점·저장)·`phoneListScans`·`phoneSetVerdict`·`phoneDeleteScan`·`phoneDeleteAllScans`(모두 지우기)·`phoneExplainScan`(AI 설명, `src/lib/ai/explain.ts`) (`src/app/phone-actions.ts`), PC용 `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
 | 2. QR 감지 — QR 코드를 찍으면 주소를 열지 않고 먼저 검사(단축 주소·수상한 도메인·http·앱 설치 파일 등)해 결과를 알리고 기록으로 저장. 휴대폰의 **카메라 앱**은 실제 카메라처럼 검은 화면·격자에 체험용 QR이 비춰지고 셔터를 누르면 판독, 위험·주의는 문자와 같은 경고 팝업. 안심 지킴이 > QR 검사는 체험용 QR을 골라 찍고 결과 창을 띄움. **위험**이면 "🔒 링크 접속을 차단했어요"(그 주소를 막아 둠), **주의**면 바로 열지 않고 [그래도 열기] → "정말 여시겠어요?" 확인 뒤 열기, **안전**한 https 주소만 [이 주소 열기]. 기록 목록·정답 고치기·지우기는 1번과 같은 실시간 감지 기록에서 | 가상 휴대폰 카메라 앱(`src/lib/phone/engine.ts`의 QR 모드), 안심 지킴이 > QR 검사 `/?app=guardian&view=qr` (`src/lib/phone/guardian-app.ts`), 체험용 QR 그림 `src/lib/scan/demo-qr.ts`. PC용 `/check` QR 검사 탭(진짜 카메라로 QR 찍기·직접 입력도 됨, `src/app/(app)/check/QrScanner.tsx`·결과 창 `src/components/VerdictSheet.tsx`) | Server Action `phoneSaveScan`(QR이면 `qrScanSchema`로 검증)·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), PC용 `createQrScan`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 판별 `src/lib/scan/rules.ts`, 체험용 QR 8개(가짜 주소) `src/app/(app)/check/samples.ts` |
 | 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 휴대폰 메시지 앱에서 문자를 눌러 [복사] → 안심 지킴이 > 붙여 넣어 검사의 [📋 붙여넣기] → [AI로 검사하기]. 사용자가 알려 준 정답("사기 맞아요/아니에요")을 학습 데이터에 더해 그 사람에게 맞춰 판단. 로그인하면 외부 AI(Claude, BAZE 게이트웨이)에게도 물어 더 위험하다고 볼 때만 판정을 올리고 "AI 판단: …" 이유를 덧붙임(실패하면 기존 판정) | 안심 지킴이 > 붙여 넣어 검사 `/?app=guardian&view=paste` (`src/lib/phone/guardian-app.ts`). PC용 `/check` 붙여 넣기 탭(`src/app/(app)/check/MessageCheckForm.tsx`, 문자 앱의 [공유]로 받기) | Server Action `phoneSaveScan`·`phoneAiScan`(외부 AI 판정)·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), 외부 AI 호출 `src/lib/scan/llm.ts`, PC용 `createMessageScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts`, 내 정답 기록 `getPersonalExamples` (`src/lib/queries.ts`) |
 
@@ -27,6 +27,18 @@
 - PC용 화면 — `/login`, `/check`(실시간 감지·QR 검사·붙여 넣기 탭과 검사 기록, 메모 고치기), `/home`, `/contacts`. 로그인하지 않고 열면 `/login`으로 보냅니다(`src/proxy.ts` + 서버에서 다시 확인)
 - 시뮬레이션 — 실제 앱 첫 화면과 같은 화면·같은 안심 지킴이 앱 코드를 쓰고 저장만 페이지 안 메모리에 하는 미리보기(`demo/memory-store.ts`, 계정을 실제로 만들지 않음 — 형식이 맞으면 로그인되고, 실패 장면은 비밀번호 `wrongpass`). https://team-spk.vercel.app/simulation.html (`npm run build`가 함께 만든다). 파일로 보낼 때는 `npm run demo:build`로 `demo/dist/simulation.html`을 만든다 (`demo/`)
 - PWA — 홈 화면에 설치, 문자 앱에서 [공유]로 바로 검사 (`src/app/manifest.ts`, `public/sw.js` — 화면·자료는 캐시하지 않음)
+
+## 작업 정리 (10.30 본선 둘째 날)
+| 무엇을 | 누가 | 어디에 | 내용 |
+| --- | --- | --- | --- |
+| 외부 AI 연결 | 공통 | BAZE 게이트웨이(`factchat-cloud.mindlogic.ai`) | 키로 Claude Haiku 5.5가 응답하는지 실제 호출로 확인. 키는 `.gitignore`에 걸린 로컬 파일과 Vercel 환경변수에만 둠(Git 기록에 없음 확인) |
+| 붙여 넣은 문자 외부 AI 판정 (기능 3) | 팀원 | `src/lib/scan/llm.ts`, `phoneAiScan` | 규칙 + 학습 AI 판정에 외부 AI 판단을 더함. 더 위험하다고 볼 때만 판정을 올리고(문자 속 속임수 방지), 짧은 글은 규칙·AI 모두 안전이면 정상으로. 8초 타임아웃, 실패하면 기존 판정 |
+| 실시간 감지 기록 AI 설명 (기능 1) | 팀원 + Claude Code | `src/lib/ai/explain.ts`, `phoneExplainScan` | 주의·위험 기록의 [🤖 AI 설명 보기] → 한 줄 요약·왜 그렇게 봤나요·지금 이렇게 하세요. 내 최근 정답 기록 5개를 함께 보내 맞춤 설명. 경고 팝업은 기다림 없이 학습 AI로 바로 띄우고 설명은 원할 때만. Zod 검증 후 `ai_summary`에 저장(새로 고쳐도 남음, 재호출 없음), 하루 20번·로그인·내 기록만, 10초 타임아웃·받는 중 표시·실패 안내. PC `/check` 기록 카드에도 표시 |
+| 감지 기록 모두 지우기 (기능 1) | 팀원 + Claude Code | `phoneDeleteAllScans`, `src/lib/phone/guardian-app.ts` | 실시간 감지 기록 위 [모두 지우기] → "기록 N건을 모두 지울까요?" 확인 창([모두 지우기]/[취소]) → userId 조건으로 내 기록만 삭제. 저장 중인 기록까지 끝난 뒤 지우고, 실패하면 안내 후 서버 기록을 다시 불러옴. 시뮬레이션(메모리 저장)도 같은 동작 |
+| 배포 설정 | 팀원 + Claude Code | Vercel(`team-spk`) | `ANTHROPIC_BASE_URL`·`ANTHROPIC_AUTH_TOKEN`·`BAZE_API_KEY`를 Production·Preview는 Secret으로 등록(대시보드에서도 값이 안 보임), 다시 배포 |
+
+- 검사: 바꿀 때마다 `npm run check`(타입 검사·eslint·prettier) 통과, `npm run build`·`npm run demo:build` 통과. 배포 뒤 `/` 200, 로그아웃 상태 `/check` → 로그인 화면(307) 확인
+- 팀원 작업과 합치기: 같은 화면(붙여 넣어 검사)을 두 사람이 고쳐 충돌 → 붙여 넣기는 팀원의 외부 AI 판정을 쓰고, AI 설명은 실시간 감지 기록에 두기로 정해 합침
 
 ## 기술 스택
 - 프론트엔드: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Zod(화면과 서버가 같은 입력 규칙 `src/lib/validation.ts`), 가상 휴대폰은 직접 만든 화면 엔진(`src/lib/phone/engine.ts`), PC용 QR 화면은 브라우저 내장 QR 인식(BarcodeDetector)
@@ -95,7 +107,7 @@
   - "로그인하는 화면도 어플을 클릭해서 들어가서 나오도록 만들어 주시고, 상단 바에 있는 메뉴 내용도 모두 가상의 핸드폰 안의 앱에 들어가있게 수정해주세요 문자 수신만 소형 메뉴바를 통해 할 수 있게 만들어주고, 나머지 기능들은 모두 가상의 핸드폰 안에서 확인할 수 있게 수정해주세요"
   - "readme에 연락처 같은 개인정보 올라간 거 있나요?"
   - "최종 배포된 파일 읽어서 readmd 기능 등 수정해주세요"
-  - "baze api 연결되었나요?" / "앱에서 ai를 어떻게 활용할 수 있을까요?" / "추천안으로 구현해줘" / "실시간 문자감지에서도 ai가 활용될 수 있을 방법이 없을까요?"
+  - "baze api 연결되었나요?" / "앱에서 ai를 어떻게 활용할 수 있을까요?" / "추천안으로 구현해줘" / "실시간 문자감지에서도 ai가 활용될 수 있을 방법이 없을까요?" / "추천방안으로 해주세요 그리고 vercel에 environment variables가 안 보여요" / "배포 주소에서 AI 기능 동작 확인해줘" / "감지기록 모두 지우기 기능 추가해주시고 지금까지 한 작업 readme에 총 정리해서 올려주세요"
 - AI가 만든 것 / 사람이 고친 것:
   - AI: 대회 사이트의 공개 설정에서 본선 규칙·심사 세부 기준을 찾아 [.agent/hackathon.md](.agent/hackathon.md) 작업 지침으로 정리, README 갱신 규칙 추가, DB·API 보안 사고 방지 점검표(비밀값·Supabase RLS·서버 권한 확인) 작성, 이 README 초안 작성
   - AI: 아이디어를 웹에서 가능한 범위로 검토(웹은 문자함 자동 읽기·휴대폰 설정 제어가 불가 → 공유하기·붙여 넣기 검사, 카메라 QR 검사, 음성으로 앱 기능·전화 앱 열기로 조정)하고 심사 기준에 맞춘 주요 기능 3개를 제안
@@ -124,4 +136,4 @@
 
 ## 아쉬운 점과 다음에 할 일
 - 아쉬운 점: 웹앱은 휴대폰의 실제 문자함을 읽을 수 없어 실시간 감지는 체험 문자로 보여 줍니다. 휴대폰 안 앱과 PC용 화면(`/check` 등)이 같은 기능을 따로 갖고 있어 화면 코드가 두 벌입니다. 휴대폰 안 앱에서는 메모 고치기와 연락처 고치기가 아직 없습니다(PC용 화면에는 있음).
-- 다음에 할 일: 기록 나눠 읽기(더 보기 — 지금은 최근 20개), 휴대폰 안 앱에 메모·연락처 고치기, 배포 주소에서 Lighthouse 성능 측정·개선, AI 메시지 분석 설명
+- 다음에 할 일: 기록 나눠 읽기(더 보기 — 지금은 최근 20개), 휴대폰 안 앱에 메모·연락처 고치기, 배포 주소에서 Lighthouse 성능 측정·개선

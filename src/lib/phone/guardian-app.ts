@@ -80,6 +80,8 @@ export type GuardianStore = {
   ): Promise<{ id: string | null; result: Analysis } | null>;
   setVerdict(id: string, verdict: Verdict | null): Promise<boolean>;
   deleteScan(id: string): Promise<boolean>;
+  /** 내 검사 기록을 모두 지운다 */
+  deleteAllScans(): Promise<boolean>;
   /** 붙여 넣은 문자 기록에 Claude 설명을 받는다(없으면 설명 없이 학습 AI 결과만) */
   explainScan?(id: string): Promise<ExplainResult>;
   listContacts(): Promise<GuardianContact[]>;
@@ -346,6 +348,8 @@ export function createGuardianApp(opts: {
   };
   /** 붙여 넣은 문자를 AI가 판단하는 중 */
   let aiBusy = false;
+  /** 감지 기록 [모두 지우기]를 눌러 확인을 묻는 중 */
+  let clearAsk = false;
   const cform = {
     busy: false,
     errors: {} as Record<string, string>,
@@ -617,7 +621,11 @@ export function createGuardianApp(opts: {
     }
     if (view === 'guard')
       return {
-        html: `${phoneBar('실시간 감지 기록')}<div class="vp-pad"><b>검사 기록 ${records.length}건</b>${
+        html: `${phoneBar('실시간 감지 기록')}<div class="vp-pad"><span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b>검사 기록 ${records.length}건</b>${records.length && !clearAsk ? '<button class="vp-mini" data-act="x:guardian:clear-ask">모두 지우기</button>' : ''}</span>${
+          clearAsk && records.length
+            ? `<div class="vp-card" role="alertdialog" style="background:#fef2f2;color:#7f1d1d"><b>기록 ${records.length}건을 모두 지울까요?</b><span style="font-size:.88em">지운 기록과 알려 주신 정답은 되돌릴 수 없어요.</span><span class="vp-chips"><button class="vp-mini" style="background:#b91c1c;color:#fff" data-act="x:guardian:clear">모두 지우기</button><button class="vp-mini" data-act="x:guardian:clear-cancel">취소</button></span></div>`
+            : ''
+        }${
           records.length
             ? records.map((r) => card(r, false)).join('')
             : '<span style="color:#6b7280">아직 기록이 없어요. 휴대폰 위의 [문자 받기]로 문자를 받아 보세요.</span>'
@@ -848,6 +856,29 @@ export function createGuardianApp(opts: {
             id ? store.deleteScan(id).catch(() => false) : false,
           );
           return ctx.toast('기록을 지웠어요');
+        }
+        case 'clear-ask':
+          clearAsk = true;
+          return;
+        case 'clear-cancel':
+          clearAsk = false;
+          return;
+        case 'clear': {
+          clearAsk = false;
+          const removed = records;
+          records = [];
+          // 저장 중인 기록까지 끝난 뒤 지운다. 실패하면 서버 기록을 다시 불러와 보여 준다.
+          void Promise.all(removed.map(serverIdOf))
+            .then(() => store.deleteAllScans())
+            .catch(() => false)
+            .then(async (ok) => {
+              if (ok) return;
+              ctx.toast('기록을 지우지 못했어요. 잠시 뒤 다시 시도해 주세요');
+              const scans = await store.listScans().catch(() => null);
+              if (scans) records = scans.map(fromStored);
+              ctx.refresh();
+            });
+          return ctx.toast('기록을 모두 지웠어요');
         }
         case 'qr': {
           const q = DEMO_QR_CODES[Number(arg)];

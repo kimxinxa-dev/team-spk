@@ -61,6 +61,10 @@ export function createMemoryStore(): GuardianStore {
       if (i >= 0) scans.splice(i, 1);
       return i >= 0;
     },
+    async deleteAllScans() {
+      scans.splice(0);
+      return true;
+    },
     async listContacts() {
       return [...contacts].sort(
         (a, b) =>

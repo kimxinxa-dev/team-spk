@@ -278,6 +278,20 @@ export async function phoneDeleteScan(input: unknown): Promise<boolean> {
   }
 }
 
+/** 내 검사 기록을 모두 지운다. userId 조건으로 내 기록만 지운다. */
+export async function phoneDeleteAllScans(): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  try {
+    await getDb().scanRecord.deleteMany({ where: { userId: user.id } });
+    revalidateScanPages();
+    return true;
+  } catch {
+    console.error('[phoneDeleteAllScans] delete failed');
+    return false;
+  }
+}
+
 export async function phoneListContacts(): Promise<GuardianContact[]> {
   const user = await getCurrentUser();
   if (!user) return [];

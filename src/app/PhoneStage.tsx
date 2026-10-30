@@ -11,6 +11,7 @@ import { DEMO_SAMPLES } from './(app)/check/samples';
 import {
   phoneAddContact,
   phoneAiScan,
+  phoneDeleteAllScans,
   phoneDeleteContact,
   phoneDeleteScan,
   phoneExplainScan,
@@ -35,6 +36,7 @@ const serverStore: GuardianStore = {
   aiScan: (content) => phoneAiScan({ content }),
   setVerdict: (id, verdict) => phoneSetVerdict({ id, verdict }),
   deleteScan: (id) => phoneDeleteScan({ id }),
+  deleteAllScans: phoneDeleteAllScans,
   explainScan: (id) => phoneExplainScan({ id }),
   listContacts: phoneListContacts,
   addContact: phoneAddContact,
