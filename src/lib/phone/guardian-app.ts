@@ -106,28 +106,28 @@ function phoneText(digits: string) {
 
 /** 휴대폰 안 로그인·연락처 입력 화면 모양 */
 const FORM_STYLE = `<style>
-.gl{padding:14px 16px 18px;display:grid;gap:12px;align-content:start}
-.gl-brand{display:grid;justify-items:center;gap:6px;text-align:center;margin:8px 0 4px}
-.gl-brand i{width:60px;height:60px;border-radius:19px;display:grid;place-items:center;background:linear-gradient(160deg,#3b82f6,#1e40af);color:#fff;box-shadow:0 8px 20px rgba(29,78,216,.3)}
-.gl-brand i svg{width:34px;height:34px}
-.gl-brand b{font-size:1.45em}
+.gl{box-sizing:border-box;width:100%;padding:10px 16px 16px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-content:start}
+.gl-brand{display:grid;justify-items:center;gap:4px;text-align:center;margin:2px 0}
+.gl-brand i{width:52px;height:52px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(160deg,#3b82f6,#1e40af);color:#fff;box-shadow:0 8px 20px rgba(29,78,216,.3)}
+.gl-brand i svg{width:30px;height:30px}
+.gl-brand b{font-size:1.35em}
 .gl-brand span{color:#52525b;font-size:.92em}
 .gl-tabs{display:grid;grid-template-columns:1fr 1fr;background:#e7e9ee;border-radius:14px;padding:4px}
 .gl-tabs button{min-height:42px;border:0;border-radius:11px;background:none;font:inherit;font-weight:800;color:#52525b;cursor:pointer}
 .gl-tabs button[aria-selected=true]{background:#fff;color:#1d4ed8;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.gl label{display:grid;gap:6px;font-weight:700}
+.gl label{display:grid;gap:5px;font-weight:700;min-width:0}
 .gl label small{font-weight:400;color:#6b7280}
-.gl-in{display:flex;align-items:center;gap:6px;min-height:50px;border:2px solid #d4d4d8;border-radius:14px;padding:0 10px;background:#fff}
+.gl-in{display:flex;align-items:center;gap:6px;min-width:0;min-height:48px;border:2px solid #d4d4d8;border-radius:14px;padding:0 10px;background:#fff}
 .gl-in:focus-within{border-color:#1d4ed8}
 .gl-in.bad{border-color:#dc2626}
 .gl-in svg{width:22px;height:22px;flex:none;color:#71717a}
-.gl-in input{flex:1;min-width:0;border:0;outline:0;font:inherit;background:none;color:#111;min-height:46px}
+.gl-in input{flex:1;min-width:0;width:100%;border:0;outline:0;font:inherit;background:none;color:#111;min-height:44px}
 .gl-eye{border:0;background:none;color:#1d4ed8;font:inherit;font-weight:800;cursor:pointer;min-height:40px;white-space:nowrap}
 .gl-err{color:#b91c1c;font-size:.85em;font-weight:700;margin:0}
 .gl-st{border-radius:12px;padding:9px 11px;font-size:.9em;margin:0;background:#fef2f2;color:#991b1b}
 .gl-st.ok{background:#f0fdf4;color:#166534}
 .gl-st button{border:0;background:none;padding:0;font:inherit;font-weight:800;color:#1d4ed8;text-decoration:underline;cursor:pointer}
-.gl-submit{min-height:52px;border:0;border-radius:16px;background:#1d4ed8;color:#fff;font:inherit;font-weight:800;font-size:1.05em;cursor:pointer}
+.gl-submit{min-height:50px;border:0;border-radius:16px;background:#1d4ed8;color:#fff;font:inherit;font-weight:800;font-size:1.05em;cursor:pointer}
 .gl-submit:disabled{opacity:.6}
 .gl-note{font-size:.82em;color:#6b7280;text-align:center;margin:0}
 .gl-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:50px;border:2px solid #d4d4d8;border-radius:14px;padding:0 12px;background:#fff;font:inherit;font-weight:700;cursor:pointer;color:#111}
@@ -287,7 +287,7 @@ const QR_STYLE = `<style>
 @keyframes gq-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 .gq-vf.cam{background:#000}
 .gq-vf.cam::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% + .5px),transparent calc(66.66% + .5px)),linear-gradient(transparent calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% - .5px),rgba(255,255,255,.22) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% - .5px),rgba(255,255,255,.22) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
-.gq-vf.cam{flex:1;height:auto}
+.gq-vf.cam{flex:1;height:auto;min-height:0}
 .gq-vf.cam .gq-br{width:190px;height:240px}
 .gq-vf.now .gq-board{animation:none!important}
 .gq-vf.now .gq-float{animation-play-state:paused}
@@ -441,7 +441,7 @@ export function createGuardianApp(opts: {
     },
   ) {
     const err = auth.errors[o.err] ?? cform.errors[o.err];
-    return `<label>${o.label}${o.hint ? ` <small>${o.hint}</small>` : ''}
+    return `<label><span>${o.label}${o.hint ? ` <small>${o.hint}</small>` : ''}</span>
       <span class="gl-in ${err ? 'bad' : ''}">${o.icon}<input type="${o.type}" data-model="${o.model}" value="${esc(ctx.drafts[o.model] ?? '')}" ${o.attrs} ${o.enter ? `data-enter="${o.enter}"` : ''} ${err ? 'aria-invalid="true"' : ''}>${o.trailing ?? ''}</span>
       ${err ? `<p class="gl-err" role="alert">${esc(err)}</p>` : ''}</label>`;
   }
