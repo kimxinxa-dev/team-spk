@@ -113,9 +113,12 @@ export async function phoneSaveScan(input: unknown): Promise<string | null> {
   }
 }
 
+/** 한 사람이 하루(24시간)에 붙여 넣기 검사에서 외부 AI를 부를 수 있는 수 */
+const AI_SCAN_DAILY_LIMIT = 30;
+
 /**
  * 붙여 넣은 문자(주요 기능 3): 기존 판정에 외부 AI 판단을 더해 저장하고, 화면에 띄울 결과와 기록 id를 돌려준다.
- * 로그인한 사람만 AI를 부른다(API 사용량 보호). 실패하면 null — 화면이 기존 판정으로 보여 준다.
+ * 로그인한 사람만, 하루 AI_SCAN_DAILY_LIMIT번까지 AI를 부른다(API 사용량 보호). 실패·초과하면 null — 화면이 기존 판정으로 보여 준다.
  */
 export async function phoneAiScan(
   input: unknown,
@@ -130,6 +133,15 @@ export async function phoneAiScan(
   const { content } = parsed.data;
 
   try {
+    // 최근 24시간 동안 붙여 넣어 검사한 기록 수로 센다.
+    const usedToday = await getDb().scanRecord.count({
+      where: {
+        userId: user.id,
+        source: 'OTHER',
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    });
+    if (usedToday >= AI_SCAN_DAILY_LIMIT) return null;
     const { aiUsed, ...result } = await analyzeMessageWithAi(
       content,
       await getPersonalExamples(user.id),
