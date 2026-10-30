@@ -13,9 +13,9 @@
 | --- | --- | --- |
 | 1. 실시간 문자 인식·감지·차단 — 가상 휴대폰을 쓰다가 [문자 받기]로 문자·카톡이 도착하는 순간 학습 AI가 채점해 위험도(%)별 경고 팝업을 띄우고, 위험한 문자 속 링크를 누르면 사이트를 막고 앱 설치 화면을 가림. 받은 문자는 말풍선을 눌러 복사할 수 있음. 감지 결과는 내 검사 기록으로 저장(넣기) → 안심 지킴이 > 실시간 감지 기록에서 목록·자세히 보기 → 새로 고쳐도 남음 → "사기 맞아요/아니에요"로 정답 고치기 → 지우기. [모두 지우기]는 확인 창(취소 가능)을 거쳐 내 기록만 한 번에 지움. 주의·위험 기록은 [🤖 AI 설명 보기]로 Claude가 이유·대처 방법을 정리(경고 팝업은 기다림 없이 학습 AI로 바로 띄우고, 설명은 원할 때만 받아 저장) | 첫 화면 `/` (`src/app/PhoneStage.tsx`), 안심 지킴이 > 실시간 감지 기록 `/?app=guardian&view=guard` (`src/lib/phone/guardian-app.ts`), 가상 휴대폰 `src/lib/phone/engine.ts`. PC용 `/check` 실시간 감지 탭(`src/app/(app)/check/demo-phone.tsx`)도 있음 | Server Action `phoneSaveScan`(서버에서 다시 채점·저장)·`phoneListScans`·`phoneSetVerdict`·`phoneDeleteScan`·`phoneDeleteAllScans`(모두 지우기)·`phoneExplainScan`(AI 설명, `src/lib/ai/explain.ts`) (`src/app/phone-actions.ts`), PC용 `createDemoScan`·`updateScanVerdict`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 채점 `src/lib/scan/analyze.ts` |
 | 2. QR 감지 — QR 코드를 찍으면 주소를 열지 않고 먼저 검사(단축 주소·수상한 도메인·http·앱 설치 파일 등)해 결과를 알리고 기록으로 저장. 휴대폰의 **카메라 앱**은 실제 카메라처럼 검은 화면·격자에 체험용 QR이 비춰지고 셔터를 누르면 판독, 위험·주의는 문자와 같은 경고 팝업. 안심 지킴이 > QR 검사는 체험용 QR을 골라 찍고 결과 창을 띄움. **위험**이면 "🔒 링크 접속을 차단했어요"(그 주소를 막아 둠), **주의**면 바로 열지 않고 [그래도 열기] → "정말 여시겠어요?" 확인 뒤 열기, **안전**한 https 주소만 [이 주소 열기]. 기록 목록·정답 고치기·지우기는 1번과 같은 실시간 감지 기록에서 | 가상 휴대폰 카메라 앱(`src/lib/phone/engine.ts`의 QR 모드), 안심 지킴이 > QR 검사 `/?app=guardian&view=qr` (`src/lib/phone/guardian-app.ts`), 체험용 QR 그림 `src/lib/scan/demo-qr.ts`. PC용 `/check` QR 검사 탭(진짜 카메라로 QR 찍기·직접 입력도 됨, `src/app/(app)/check/QrScanner.tsx`·결과 창 `src/components/VerdictSheet.tsx`) | Server Action `phoneSaveScan`(QR이면 `qrScanSchema`로 검증)·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), PC용 `createQrScan`·`updateScanMemo`·`deleteScan` (`src/app/(app)/scan-actions.ts`), 판별 `src/lib/scan/rules.ts`, 체험용 QR 8개(가짜 주소) `src/app/(app)/check/samples.ts` |
-| 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 휴대폰 메시지 앱에서 문자를 눌러 [복사] → 안심 지킴이 > 붙여 넣어 검사의 [📋 붙여넣기] → [AI로 검사하기]. 사용자가 알려 준 정답("사기 맞아요/아니에요")을 학습 데이터에 더해 그 사람에게 맞춰 판단. 로그인하면 외부 AI(Claude, BAZE 게이트웨이)에게도 물어 더 위험하다고 볼 때만 판정을 올리고 "AI 판단: …" 이유를 덧붙임(실패하면 기존 판정) | 안심 지킴이 > 붙여 넣어 검사 `/?app=guardian&view=paste` (`src/lib/phone/guardian-app.ts`). PC용 `/check` 붙여 넣기 탭(`src/app/(app)/check/MessageCheckForm.tsx`, 문자 앱의 [공유]로 받기) | Server Action `phoneSaveScan`·`phoneAiScan`(외부 AI 판정)·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), 외부 AI 호출 `src/lib/scan/llm.ts`, PC용 `createMessageScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts`, 내 정답 기록 `getPersonalExamples` (`src/lib/queries.ts`) |
+| 3. 붙여 넣은 문자의 AI 판단 — 받은 문자를 복사해 붙여 넣으면 학습된 AI가 스미싱인지 판단해 위험도(%)·이유를 보여 주고 기록으로 저장. 휴대폰 메시지 앱에서 문자를 눌러 [복사] → 안심 지킴이 > 붙여 넣어 검사의 [📋 붙여넣기] → [AI로 검사하기]. 사용자가 알려 준 정답("사기 맞아요/아니에요")을 학습 데이터에 더해 그 사람에게 맞춰 판단. 로그인하면 외부 AI(Claude, BAZE 게이트웨이)에게도 물어 더 위험하다고 볼 때만 판정을 올리고 "AI 판단: …" 이유를 덧붙임(로그인 사용자만, 하루 30번·1000자 제한, 8초 타임아웃, 실패·초과하면 기존 판정) | 안심 지킴이 > 붙여 넣어 검사 `/?app=guardian&view=paste` (`src/lib/phone/guardian-app.ts`). PC용 `/check` 붙여 넣기 탭(`src/app/(app)/check/MessageCheckForm.tsx`, 문자 앱의 [공유]로 받기) | Server Action `phoneSaveScan`·`phoneAiScan`(외부 AI 판정)·`phoneSetVerdict`·`phoneDeleteScan` (`src/app/phone-actions.ts`), 외부 AI 호출 `src/lib/scan/llm.ts`, PC용 `createMessageScan` (`src/app/(app)/scan-actions.ts`), 학습 AI `src/lib/scan/model.ts`·학습 데이터 `src/lib/scan/dataset.ts`, 내 정답 기록 `getPersonalExamples` (`src/lib/queries.ts`) |
 
-- 현재 상태: 위 세 기능과 로그인·연락처를 배포 주소에서 393×852 화면으로 처음부터 끝까지 자동으로 눌러 확인했습니다(아래 「결과를 확인한 방법」).
+- 현재 상태(최종 배포본 https://team-spk.vercel.app): 위 세 기능과 로그인·연락처를 배포 주소에서 393×852 화면으로 처음부터 끝까지 자동으로 눌러 확인했고, 마지막 날 더한 외부 AI 판정(3번)·AI 설명·모두 지우기(1번)는 실제 AI 호출·배포 응답·서버 로그로 확인했습니다(아래 「결과를 확인한 방법」).
 - 로그인: 「안심 지킴이」 앱을 누르면 먼저 로그인 화면(로그인/가입하기 탭, 입력 예시, 비밀번호 보기, 가입할 때 "비밀번호 한 번 더", 칸별 안내, 실패하면 [가입하기] 안내, Enter로 제출). 이메일·비밀번호는 서버에서 Supabase Auth로 확인합니다(`src/lib/auth-core.ts`). 로그인한 이메일과 [로그아웃]은 앱 메인 화면 위쪽에 있습니다.
 - 내 기록은 나만 보입니다. 모든 서버 처리가 로그인 확인 → Zod 입력 검증 → 내 자료인지(userId 조건) 확인 순서이고, 화면이 보낸 위험도는 믿지 않고 서버에서 다시 채점해 저장합니다. 로그인하지 않아도 문자를 받아 경고 팝업은 볼 수 있고, 그때 감지한 기록은 로그인하는 순간 내 기록으로 저장됩니다.
 - 주소로 화면 바로 열기: `/?app=guardian`(로그인), `/?app=guardian&view=guard`(실시간 감지 기록), `view=qr`(QR 검사), `view=paste`(붙여 넣어 검사), `view=contacts`(보호자·연락처). 로그인 전이면 로그인 화면을 먼저 보여 주고, 로그인하면 그 화면으로 이어집니다.
@@ -28,24 +28,25 @@
 - 시뮬레이션 — 실제 앱 첫 화면과 같은 화면·같은 안심 지킴이 앱 코드를 쓰고 저장만 페이지 안 메모리에 하는 미리보기(`demo/memory-store.ts`, 계정을 실제로 만들지 않음 — 형식이 맞으면 로그인되고, 실패 장면은 비밀번호 `wrongpass`). https://team-spk.vercel.app/simulation.html (`npm run build`가 함께 만든다). 파일로 보낼 때는 `npm run demo:build`로 `demo/dist/simulation.html`을 만든다 (`demo/`)
 - PWA — 홈 화면에 설치, 문자 앱에서 [공유]로 바로 검사 (`src/app/manifest.ts`, `public/sw.js` — 화면·자료는 캐시하지 않음)
 
-## 작업 정리 (10.30 본선 둘째 날)
-| 무엇을 | 누가 | 어디에 | 내용 |
-| --- | --- | --- | --- |
-| 외부 AI 연결 | 공통 | BAZE 게이트웨이(`factchat-cloud.mindlogic.ai`) | 키로 Claude Haiku 5.5가 응답하는지 실제 호출로 확인. 키는 `.gitignore`에 걸린 로컬 파일과 Vercel 환경변수에만 둠(Git 기록에 없음 확인) |
-| 붙여 넣은 문자 외부 AI 판정 (기능 3) | 팀원 | `src/lib/scan/llm.ts`, `phoneAiScan` | 규칙 + 학습 AI 판정에 외부 AI 판단을 더함. 더 위험하다고 볼 때만 판정을 올리고(문자 속 속임수 방지), 짧은 글은 규칙·AI 모두 안전이면 정상으로. 8초 타임아웃, 실패하면 기존 판정 |
-| 실시간 감지 기록 AI 설명 (기능 1) | 팀원 + Claude Code | `src/lib/ai/explain.ts`, `phoneExplainScan` | 주의·위험 기록의 [🤖 AI 설명 보기] → 한 줄 요약·왜 그렇게 봤나요·지금 이렇게 하세요. 내 최근 정답 기록 5개를 함께 보내 맞춤 설명. 경고 팝업은 기다림 없이 학습 AI로 바로 띄우고 설명은 원할 때만. Zod 검증 후 `ai_summary`에 저장(새로 고쳐도 남음, 재호출 없음), 하루 20번·로그인·내 기록만, 10초 타임아웃·받는 중 표시·실패 안내. PC `/check` 기록 카드에도 표시 |
-| 감지 기록 모두 지우기 (기능 1) | 팀원 + Claude Code | `phoneDeleteAllScans`, `src/lib/phone/guardian-app.ts` | 실시간 감지 기록 위 [모두 지우기] → "기록 N건을 모두 지울까요?" 확인 창([모두 지우기]/[취소]) → userId 조건으로 내 기록만 삭제. 저장 중인 기록까지 끝난 뒤 지우고, 실패하면 안내 후 서버 기록을 다시 불러옴. 시뮬레이션(메모리 저장)도 같은 동작 |
-| 배포 설정 | 팀원 + Claude Code | Vercel(`team-spk`) | `ANTHROPIC_BASE_URL`·`ANTHROPIC_AUTH_TOKEN`·`BAZE_API_KEY`를 Production·Preview는 Secret으로 등록(대시보드에서도 값이 안 보임), 다시 배포 |
-
-- 검사: 키·비밀값이 커밋에 없는지 매번 검색, 바꿀 때마다 `npm run check`(타입 검사·eslint·prettier) 통과, `npm run build`·`npm run demo:build` 통과. 배포 뒤 `/` 200, 로그아웃 상태 `/check` → 로그인 화면(307) 확인
-- 팀원 작업과 합치기: 같은 화면(붙여 넣어 검사)을 두 사람이 고쳐 충돌 → 붙여 넣기는 팀원의 외부 AI 판정을 쓰고, AI 설명은 실시간 감지 기록에 두기로 정해 합침
-- 배포 뒤 고친 문제: 배포 주소에서 [AI 설명 보기]가 "AI 설명을 받지 못했어요"로 끝남 → Vercel 서버 로그(`vercel logs`)에서 `[explainMessage] invalid response shape` 확인 → Claude 답의 글자 수·항목 수가 조금 넘치면 통째로 버려지던 것을 잘라 맞춘 뒤 검증하도록 고치고 최대 답변 길이를 늘림, 실패하면 어느 칸이 문제였는지 로그에 남김(문자 내용은 남기지 않음). 체험 문자 3개(기관·택배·가족 사칭)로 실제 게이트웨이를 불러 모두 2~3초 안에 설명이 오는지 확인 후 다시 배포
+## 심사 기준 대응(근거)
+| 기준 | 어떻게 지켰나 | 근거 |
+| --- | --- | --- |
+| 로그인 | Supabase Auth 이메일·비밀번호(비밀번호는 Supabase가 관리, 앱 DB에 없음). 로그인 안 하면 PC 화면은 `/login`으로 보내고 서버에서도 다시 확인 | `src/lib/auth-core.ts`, `src/proxy.ts`, `src/lib/auth.ts` |
+| 내 자료만 | 모든 읽기·고치기·지우기에 `userId` 조건(남의 기록은 0건으로 끝남), 모두 지우기도 내 기록만 | `src/app/phone-actions.ts`, `src/app/(app)/scan-actions.ts` |
+| 서버 입력 검증 | 모든 Server Action이 Zod로 다시 검증, 화면이 보낸 위험도는 믿지 않고 서버에서 다시 채점 | `src/lib/validation.ts` |
+| 비밀값 | DB 주소·AI 키는 서버 환경변수에만(`NEXT_PUBLIC_` 아님, `server-only` 모듈에서만 읽음). Git 전체 기록에 키 0건 확인. 배포 키는 Vercel Secret | `src/lib/env.ts`, `src/lib/ai/explain.ts`, `src/lib/scan/llm.ts`, `.env.example` |
+| 오류에 내부 정보 없음 | 화면에는 쉬운 안내만, 서버 로그에도 문자 내용·키를 남기지 않음 | `src/lib/action-result.ts` |
+| HTML 그대로 출력 금지 | 사용자 글·AI 답은 모두 이스케이프해 글자로만 표시 | `escapeHtml`(`src/lib/phone/engine.ts`), React 기본 이스케이프 |
+| DB | Supabase PostgreSQL 서울, 표마다 RLS 켬, 인덱스(`userId, createdAt`), 마이그레이션 기록 | `prisma/schema.prisma`, `prisma/migrations/` |
+| AI | 핵심 기능 1·3에 AI. 내 정답 기록을 넣어 맞춤 판단·설명, 응답은 Zod 검증 후 저장, 받는 중 표시·타임아웃·실패 안내, 로그인 사용자만·하루 횟수(설명 20번, 판정 30번)·1000자 제한 | 아래 「기술 스택 > AI」 |
+| 상태 표시 | 받는 중·빈 목록·오류·저장 안내, 지우기 전 확인 창과 [취소], 입력칸 옆 오류 안내 | `src/lib/phone/guardian-app.ts` |
+| 반응 | 경고 팝업은 AI를 기다리지 않고 앱 안 학습 AI로 바로, Vercel 서버와 DB 모두 서울 | `vercel.json`(`icn1`) |
 
 ## 기술 스택
 - 프론트엔드: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Zod(화면과 서버가 같은 입력 규칙 `src/lib/validation.ts`), 가상 휴대폰은 직접 만든 화면 엔진(`src/lib/phone/engine.ts`), PC용 QR 화면은 브라우저 내장 QR 인식(BarcodeDetector)
 - 백엔드: Next.js Server Action, Prisma 7 (`@prisma/adapter-pg`), Supabase Auth (`@supabase/ssr`) 로그인, `src/proxy.ts`에서 로그인 세션 갱신·보호된 화면 접근 차단
-- AI: 외부 AI API 없이 서버·화면에서 함께 쓰는 자체 학습 모델 — 사기·정상 문자 학습 데이터(`src/lib/scan/dataset.ts`)로 만든 나이브 베이즈 채점(`src/lib/scan/model.ts`)과 규칙 판별(`src/lib/scan/rules.ts`)을 합쳐 위험도(%)·이유를 낸다(`src/lib/scan/analyze.ts`). 사용자가 알려 준 정답 기록(최근 50개)을 더해 사람마다 맞춰 판단. QR은 주소 규칙 판별만 쓴다
-- 생성형 AI: Claude Haiku 5.5(BAZE 게이트웨이) 두 곳 — ① 붙여 넣은 문자의 판정 보강(`src/lib/scan/llm.ts`, `BAZE_API_KEY`, 8초 타임아웃, 더 위험할 때만 판정을 올림) ② 실시간 감지 기록의 [🤖 AI 설명 보기](`src/lib/ai/explain.ts`) — 문자·학습 AI 판단·내 최근 정답 기록 5개를 서버에서 보내 이유와 대처 방법을 받는다. 위험도는 바꾸지 않음. 응답은 Zod(`aiExplanationSchema`)로 모양을 검증한 뒤에만 `scan_records.ai_summary`에 저장, 이미 설명이 있으면 다시 부르지 않음. 로그인 사용자만·내 기록만, 하루 20번·문자 1000자 제한, 10초 타임아웃, 받는 중 표시·실패하면 학습 AI 결과만 두고 안내. 키는 서버 환경변수(`ANTHROPIC_AUTH_TOKEN`)에만 둔다
+- AI ① 앱 안 학습 모델(기다림 없이 바로 판단) — 사기·정상 문자 학습 데이터(`src/lib/scan/dataset.ts`)로 만든 나이브 베이즈 채점(`src/lib/scan/model.ts`)과 규칙 판별(`src/lib/scan/rules.ts`)을 합쳐 위험도(%)·이유를 낸다(`src/lib/scan/analyze.ts`). 사용자가 알려 준 정답 기록(최근 50개)을 더해 사람마다 맞춰 판단. QR은 주소 규칙 판별만 쓴다
+- AI ② 외부 생성형 AI: Claude Haiku 5.5(BAZE 게이트웨이) 두 곳 — 붙여 넣은 문자의 판정 보강(`src/lib/scan/llm.ts`, `BAZE_API_KEY`, 8초 타임아웃, 더 위험할 때만 판정을 올려 문자 속 속임수로 안전해지지 않게, 하루 30번), 실시간 감지 기록의 [🤖 AI 설명 보기](`src/lib/ai/explain.ts`) — 문자·학습 AI 판단·내 최근 정답 기록 5개를 서버에서 보내 이유와 대처 방법을 받는다. 위험도는 바꾸지 않음. 응답은 Zod(`aiExplanationSchema`)로 모양을 검증한 뒤에만 `scan_records.ai_summary`에 저장, 이미 설명이 있으면 다시 부르지 않음. 로그인 사용자만·내 기록만, 하루 20번·문자 1000자 제한, 10초 타임아웃, 받는 중 표시·실패하면 학습 AI 결과만 두고 안내. 키는 서버 환경변수(`ANTHROPIC_AUTH_TOKEN`)에만 둔다
 - 데이터(어디에, 무엇을): Supabase PostgreSQL 서울(`prisma/schema.prisma`) — `users`(회원, Supabase Auth 사용자 id), `scan_records`(문자·QR 검사 기록: 받은 곳·내용·위험도·이유·정답·메모), `contacts`(보호자·연락처). 모든 표에 RLS를 켜 공개 Data API로는 읽을 수 없고, 서버(Prisma)만 읽고 쓴다
 
 ## 실행 방법
@@ -108,7 +109,7 @@
   - "로그인하는 화면도 어플을 클릭해서 들어가서 나오도록 만들어 주시고, 상단 바에 있는 메뉴 내용도 모두 가상의 핸드폰 안의 앱에 들어가있게 수정해주세요 문자 수신만 소형 메뉴바를 통해 할 수 있게 만들어주고, 나머지 기능들은 모두 가상의 핸드폰 안에서 확인할 수 있게 수정해주세요"
   - "readme에 연락처 같은 개인정보 올라간 거 있나요?"
   - "최종 배포된 파일 읽어서 readmd 기능 등 수정해주세요"
-  - "baze api 연결되었나요?" / "앱에서 ai를 어떻게 활용할 수 있을까요?" / "추천안으로 구현해줘" / "실시간 문자감지에서도 ai가 활용될 수 있을 방법이 없을까요?" / "추천방안으로 해주세요 그리고 vercel에 environment variables가 안 보여요" / "배포 주소에서 AI 기능 동작 확인해줘" / "감지기록 모두 지우기 기능 추가해주시고 지금까지 한 작업 readme에 총 정리해서 올려주세요" / "ai가 설명을 받지 못 했다고 떠요" / "readme까지 정리해주세요"
+  - "baze api 연결되었나요?" / "앱에서 ai를 어떻게 활용할 수 있을까요?" / "추천안으로 구현해줘" / "실시간 문자감지에서도 ai가 활용될 수 있을 방법이 없을까요?" / "추천방안으로 해주세요 그리고 vercel에 environment variables가 안 보여요" / "배포 주소에서 AI 기능 동작 확인해줘" / "감지기록 모두 지우기 기능 추가해주시고 지금까지 한 작업 readme에 총 정리해서 올려주세요" / "ai가 설명을 받지 못 했다고 떠요" / "readme까지 정리해주세요" / "규칙은 다 준수해서 만든 거죠?" / "횟수 제한넣고 remdme에 다음에 할 일 지워서 vercel에 배포된 최종본 기반으로 규칙에 의거해서 readme 다시 완벽하게 작성해주세요"
 - AI가 만든 것 / 사람이 고친 것:
   - AI: 대회 사이트의 공개 설정에서 본선 규칙·심사 세부 기준을 찾아 [.agent/hackathon.md](.agent/hackathon.md) 작업 지침으로 정리, README 갱신 규칙 추가, DB·API 보안 사고 방지 점검표(비밀값·Supabase RLS·서버 권한 확인) 작성, 이 README 초안 작성
   - AI: 아이디어를 웹에서 가능한 범위로 검토(웹은 문자함 자동 읽기·휴대폰 설정 제어가 불가 → 공유하기·붙여 넣기 검사, 카메라 QR 검사, 음성으로 앱 기능·전화 앱 열기로 조정)하고 심사 기준에 맞춘 주요 기능 3개를 제안
@@ -125,10 +126,11 @@
   - AI: 첫 화면을 가상 휴대폰 하나로 바꾸고 로그인·가입, 실시간 감지 기록, QR 검사, 붙여 넣어 검사, 보호자·연락처, 로그아웃을 휴대폰 안 안심 지킴이 앱으로 옮김. 휴대폰 안 앱이 부르는 서버 기능(`src/app/phone-actions.ts`)을 만들고 로그인 처리를 `src/lib/auth-core.ts`로 모아 `/login`과 함께 씀. 안심 지킴이 앱을 실제 앱과 시뮬레이션이 같은 코드로 쓰도록 `src/lib/phone/guardian-app.ts`로 옮김(저장만 서버/메모리로 나눔). 주소로 앱 화면 바로 열기, 입력칸 Enter로 제출, 다시 그려도 입력 커서 유지를 휴대폰 엔진에 추가. 393×852 등 화면 높이에 맞춰 휴대폰 크기를 정해 스크롤 없이 한 화면에
   - 사람: 시연 화면 크기(393×852)를 정하고, 휴대폰 밖에는 문자 받기만 남기고 로그인과 나머지 기능은 모두 휴대폰 안 앱에서 하도록 화면 구성을 정함. README에 연락처 같은 개인정보가 올라가지 않았는지 확인을 요청함
   - AI: 실시간 감지 기록에 Claude 설명 추가 — 서버 전용 호출(`src/lib/ai/explain.ts`, 10초 타임아웃), Server Action `phoneExplainScan`(로그인·내 기록·하루 20번 제한, Zod 응답 검증 후 `ai_summary` 저장, 이미 있으면 재호출 없음), 주의·위험 기록의 [AI 설명 보기] → 결과 화면의 받는 중·설명·실패 안내, PC 기록 카드 표시. 팀원의 붙여 넣기 외부 AI 판정과 합칠 때 붙여 넣기 검사는 팀원 방식을 그대로 두기로 함
-  - AI: 감지 기록 [모두 지우기](확인 창·취소, 내 기록만 삭제, 실패 시 다시 불러오기)와 시뮬레이션 저장소 동작 추가. 배포 뒤 AI 설명 실패를 서버 로그로 원인 확인해 고침. README에 본선 둘째 날 작업 정리 표 작성
+  - AI: 감지 기록 [모두 지우기](확인 창·취소, 내 기록만 삭제, 실패 시 다시 불러오기)와 시뮬레이션 저장소 동작 추가. 배포 뒤 AI 설명 실패를 서버 로그로 원인 확인해 고침. README에 마지막 날 작업 내용 정리
+  - AI: 규칙 점검(공개 저장소·생성 시각·키 커밋 여부·README 필수 섹션·console.log) 후 빠진 것(붙여 넣기 외부 AI 판정의 횟수 제한)을 찾아 하루 30번 제한 추가, 최종 배포본 기준으로 README를 심사 기준에 맞춰 다시 정리
   - 사람: 배포 주소에서 직접 눌러 AI 설명 실패를 발견해 알림, Vercel 환경변수 등록·다시 배포를 직접 실행(비밀 키·운영 배포는 사람이 실행), 감지 기록 모두 지우기 기능을 요청
   - 사람: 경고 팝업은 기다림 없이 학습 AI로 띄우고 Claude 설명은 원할 때만 받도록 범위를 정함, 붙여 넣기 검사는 팀원의 외부 AI 판정을 쓰기로 결정
-- 결과를 확인한 방법: 대회 사이트 화면의 심사 기준과 정리한 문서를 비교, `npx prettier --check`로 문서 서식 확인, GitHub 저장소에서 커밋 반영 확인. 뼈대는 `npm run typecheck`·`npm run lint`·`npm run db:validate`·`npm run build` 통과, 예시 사기 문자 5개·QR 5개로 판별 결과 확인, 로그아웃 상태로 `/check`를 열면 `/login`으로 가는지 확인. 학습 AI 채점은 학습 데이터에 없는 예시 문자 7개(사기 4·정상 3)로 결과가 맞는지 확인, 합친 코드는 `tsc`·`eslint`·`next build` 통과. QR 감지는 체험용 QR 8개의 판독 결과(위험 3·주의 3·안전 2)를 판별 코드로 직접 계산해 확인하고, 시뮬레이션은 헤드리스 크롬으로 카메라 열기 → 셔터 → 경고 팝업·차단 문구·확인 창·[링크 열기]를 자동으로 눌러 화면을 찍어 확인, 바꿀 때마다 `npm run typecheck`·`eslint`·`npm run build`·`npm run demo:build` 통과. 로그인 화면은 앱을 실제로 띄워 휴대폰 폭(390px)과 넓은 화면을 찍어 확인하고, 크롬을 원격 조종해 [가입하기] 탭에서 서로 다른 비밀번호로 가입을 눌러 서버가 "비밀번호가 서로 달라요"로 막는지 확인. 배포 주소에서 새 로그인 화면이 뜨는지와 로그아웃 상태로 `/check`를 열면 `/login`으로 보내지는지(307) 확인. 시뮬레이션은 로그인하면 휴대폰 화면으로 넘어가는지 원격 조종으로 확인. 첫 화면을 가상 휴대폰으로 바꾼 뒤에는 헤드리스 크롬을 393×852 휴대폰 화면으로 띄워 배포 주소와 시뮬레이션에서 같은 시나리오 20단계를 자동으로 눌러 모두 통과 — 막대에는 [문자 받기]만 있는지, 안심 지킴이 앱을 누르면 로그인 화면, 빈 칸·틀린 비밀번호 안내, 로그인 → 앱 메인, 문자 받기 → 경고 팝업 → 실시간 감지 기록에 저장, 정답 알려 주기, QR 검사 결과 창, 붙여 넣어 검사, 연락처 추가·지우기, 로그아웃, 주소로 QR 화면 바로 열기(로그인 뒤 이어짐), 처음부터 끝까지 스크롤 없이 한 화면. 360×780·1280×800에서도 한 화면에 들어오는지 확인. 바꿀 때마다 `npm run check`(타입 검사·eslint·prettier)와 `next build` 통과. README·Git 기록에 전화번호·이메일·계정 비밀번호·DB 주소·키가 없는지 검색으로 확인. Claude 설명은 실제 게이트웨이로 택배 사칭 문자와 예전 정답 기록 1개를 보내 요약·이유 3개(내 기록과 비슷한 점 포함)·대처 3개가 검증을 통과해 돌아오는지 확인
+- 결과를 확인한 방법: 대회 사이트 화면의 심사 기준과 정리한 문서를 비교, `npx prettier --check`로 문서 서식 확인, GitHub 저장소에서 커밋 반영 확인. 뼈대는 `npm run typecheck`·`npm run lint`·`npm run db:validate`·`npm run build` 통과, 예시 사기 문자 5개·QR 5개로 판별 결과 확인, 로그아웃 상태로 `/check`를 열면 `/login`으로 가는지 확인. 학습 AI 채점은 학습 데이터에 없는 예시 문자 7개(사기 4·정상 3)로 결과가 맞는지 확인, 합친 코드는 `tsc`·`eslint`·`next build` 통과. QR 감지는 체험용 QR 8개의 판독 결과(위험 3·주의 3·안전 2)를 판별 코드로 직접 계산해 확인하고, 시뮬레이션은 헤드리스 크롬으로 카메라 열기 → 셔터 → 경고 팝업·차단 문구·확인 창·[링크 열기]를 자동으로 눌러 화면을 찍어 확인, 바꿀 때마다 `npm run typecheck`·`eslint`·`npm run build`·`npm run demo:build` 통과. 로그인 화면은 앱을 실제로 띄워 휴대폰 폭(390px)과 넓은 화면을 찍어 확인하고, 크롬을 원격 조종해 [가입하기] 탭에서 서로 다른 비밀번호로 가입을 눌러 서버가 "비밀번호가 서로 달라요"로 막는지 확인. 배포 주소에서 새 로그인 화면이 뜨는지와 로그아웃 상태로 `/check`를 열면 `/login`으로 보내지는지(307) 확인. 시뮬레이션은 로그인하면 휴대폰 화면으로 넘어가는지 원격 조종으로 확인. 첫 화면을 가상 휴대폰으로 바꾼 뒤에는 헤드리스 크롬을 393×852 휴대폰 화면으로 띄워 배포 주소와 시뮬레이션에서 같은 시나리오 20단계를 자동으로 눌러 모두 통과 — 막대에는 [문자 받기]만 있는지, 안심 지킴이 앱을 누르면 로그인 화면, 빈 칸·틀린 비밀번호 안내, 로그인 → 앱 메인, 문자 받기 → 경고 팝업 → 실시간 감지 기록에 저장, 정답 알려 주기, QR 검사 결과 창, 붙여 넣어 검사, 연락처 추가·지우기, 로그아웃, 주소로 QR 화면 바로 열기(로그인 뒤 이어짐), 처음부터 끝까지 스크롤 없이 한 화면. 360×780·1280×800에서도 한 화면에 들어오는지 확인. 바꿀 때마다 `npm run check`(타입 검사·eslint·prettier)와 `next build` 통과. README·Git 기록에 전화번호·이메일·계정 비밀번호·DB 주소·키가 없는지 검색으로 확인. Claude 설명은 실제 게이트웨이로 택배 사칭 문자와 예전 정답 기록 1개를 보내 요약·이유 3개(내 기록과 비슷한 점 포함)·대처 3개가 검증을 통과해 돌아오는지 확인. 마지막 날: 같은 화면을 두 사람이 고친 충돌을 합친 뒤 `npm run check`·`npm run build`·`npm run demo:build` 통과, 배포 주소 `/` 200·로그아웃 상태 `/check` → 로그인(307) 확인. 배포 주소에서 AI 설명이 "받지 못했어요"로 끝나는 문제를 Vercel 서버 로그(`[explainMessage] invalid response shape`)로 찾아, 글자 수·항목 수가 조금 넘친 답을 잘라 맞춘 뒤 검증하도록 고치고 체험 문자 3개(기관·택배·가족 사칭)로 실제 호출해 모두 2~3초 안에 설명이 오는지 확인 후 다시 배포
 
 ## 팀원 역할
 (이름·학번 없이 역할만)
@@ -137,6 +139,5 @@
 - 백엔드: C
 - 검증: B
 
-## 아쉬운 점과 다음에 할 일
-- 아쉬운 점: 웹앱은 휴대폰의 실제 문자함을 읽을 수 없어 실시간 감지는 체험 문자로 보여 줍니다. 휴대폰 안 앱과 PC용 화면(`/check` 등)이 같은 기능을 따로 갖고 있어 화면 코드가 두 벌입니다. 휴대폰 안 앱에서는 메모 고치기와 연락처 고치기가 아직 없습니다(PC용 화면에는 있음).
-- 다음에 할 일: 기록 나눠 읽기(더 보기 — 지금은 최근 20개), 휴대폰 안 앱에 메모·연락처 고치기, 배포 주소에서 Lighthouse 성능 측정·개선
+## 아쉬운 점
+- 웹앱은 휴대폰의 실제 문자함을 읽을 수 없어 실시간 감지는 체험 문자로 보여 줍니다. 휴대폰 안 앱과 PC용 화면(`/check` 등)이 같은 기능을 따로 갖고 있어 화면 코드가 두 벌입니다. 휴대폰 안 앱에서는 메모 고치기와 연락처 고치기가 아직 없습니다(PC용 화면에는 있음).
