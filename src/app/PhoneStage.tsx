@@ -10,6 +10,7 @@ import { analyzeScan } from '@/lib/scan/analyze';
 import { DEMO_SAMPLES } from './(app)/check/samples';
 import {
   phoneAddContact,
+  phoneAiScan,
   phoneDeleteContact,
   phoneDeleteScan,
   phoneListContacts,
@@ -30,6 +31,7 @@ const serverStore: GuardianStore = {
   signOut: phoneSignOut,
   listScans: phoneListScans,
   saveScan: phoneSaveScan,
+  aiScan: (content) => phoneAiScan({ content }),
   setVerdict: (id, verdict) => phoneSetVerdict({ id, verdict }),
   deleteScan: (id) => phoneDeleteScan({ id }),
   listContacts: phoneListContacts,

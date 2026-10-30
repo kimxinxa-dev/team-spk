@@ -9,6 +9,7 @@ import { signInCore, signOutCore, signUpCore } from '@/lib/auth-core';
 import { getDb } from '@/lib/db';
 import { getPersonalExamples, listContacts, listScans } from '@/lib/queries';
 import { analyzeScan } from '@/lib/scan/analyze';
+import { analyzeMessageWithAi } from '@/lib/scan/llm';
 import {
   contactSchema,
   idSchema,
@@ -21,6 +22,7 @@ import {
   invalidResult,
   type ActionResult,
 } from '@/lib/action-result';
+import type { Analysis } from '@/lib/phone/engine';
 import type {
   AuthResult,
   GuardianContact,
@@ -103,6 +105,53 @@ export async function phoneSaveScan(input: unknown): Promise<string | null> {
     return row.id;
   } catch {
     console.error('[phoneSaveScan] insert failed');
+    return null;
+  }
+}
+
+/**
+ * 붙여 넣은 문자(주요 기능 3): 기존 판정에 외부 AI 판단을 더해 저장하고, 화면에 띄울 결과와 기록 id를 돌려준다.
+ * 로그인한 사람만 AI를 부른다(API 사용량 보호). 실패하면 null — 화면이 기존 판정으로 보여 준다.
+ */
+export async function phoneAiScan(
+  input: unknown,
+): Promise<{ id: string | null; result: Analysis } | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const parsed = messageScanSchema.safeParse({
+    content: (input as { content?: unknown } | null)?.content,
+    source: 'OTHER',
+  });
+  if (!parsed.success) return null;
+  const { content } = parsed.data;
+
+  try {
+    const { aiUsed, ...result } = await analyzeMessageWithAi(
+      content,
+      await getPersonalExamples(user.id),
+    );
+    if (!aiUsed) return null;
+    const row = await getDb()
+      .scanRecord.create({
+        data: {
+          userId: user.id,
+          kind: 'MESSAGE',
+          source: 'OTHER',
+          content,
+          riskLevel: result.riskLevel,
+          score: result.score,
+          reasons: result.reasons,
+        },
+        select: { id: true },
+      })
+      .catch(() => {
+        console.error('[phoneAiScan] insert failed');
+        return null;
+      });
+    if (row) revalidateScanPages();
+    return { id: row?.id ?? null, result };
+  } catch {
+    console.error('[phoneAiScan] failed');
     return null;
   }
 }

@@ -116,14 +116,14 @@ const CONTACTS = [
     name: '딸',
     initial: '딸',
     color: '#ec4899',
-    phone: '010-2345-6789',
+    phone: '010-0000-6789',
   },
   {
     id: 'clinic',
     name: '동네병원',
     initial: '병',
     color: '#10b981',
-    phone: '02-123-4567',
+    phone: '02-0000-4567',
   },
 ];
 

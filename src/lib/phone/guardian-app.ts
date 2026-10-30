@@ -63,6 +63,10 @@ export type GuardianStore = {
     source: ScanSource;
     content: string;
   }): Promise<string | null>;
+  /** 붙여 넣은 문자를 외부 AI에게도 물어 저장한다(없거나 실패하면 null → 기존 판정을 쓴다) */
+  aiScan?(
+    content: string,
+  ): Promise<{ id: string | null; result: Analysis } | null>;
   setVerdict(id: string, verdict: Verdict | null): Promise<boolean>;
   deleteScan(id: string): Promise<boolean>;
   listContacts(): Promise<GuardianContact[]>;
@@ -322,6 +326,8 @@ export function createGuardianApp(opts: {
     errors: {} as Record<string, string>,
     status: null as { ok: boolean; text: string } | null,
   };
+  /** 붙여 넣은 문자를 AI가 판단하는 중 */
+  let aiBusy = false;
   const cform = {
     busy: false,
     errors: {} as Record<string, string>,
@@ -355,10 +361,16 @@ export function createGuardianApp(opts: {
     return r.serverId ?? (r.saving ? await r.saving : null);
   }
 
-  function add(source: ScanSource, text: string, result: Analysis) {
+  /** serverId를 주면 이미 서버에 저장된 기록이라 다시 저장하지 않는다. */
+  function add(
+    source: ScanSource,
+    text: string,
+    result: Analysis,
+    serverId: string | null = null,
+  ) {
     const r: Rec = {
       key: `r${nextKey++}`,
-      serverId: null,
+      serverId,
       saving: null,
       source,
       text,
@@ -366,7 +378,7 @@ export function createGuardianApp(opts: {
       verdict: null,
     };
     records.unshift(r);
-    persist(r);
+    if (!serverId) persist(r);
     return r;
   }
 
@@ -559,7 +571,7 @@ export function createGuardianApp(opts: {
       };
     if (view === 'paste')
       return {
-        html: `${phoneBar('붙여 넣어 검사')}<div class="vp-pad"><div class="vp-card"><b>받은 문자를 붙여 넣으세요</b><span style="font-size:.88em;color:#6b7280">메시지 앱에서 문자를 눌러 [복사]한 뒤, 아래 [붙여넣기]를 누르면 AI가 스미싱인지 판단해요.</span><textarea class="vp-field" rows="4" data-model="paste" placeholder="예: [OO은행] 계좌가 정지되었습니다 확인 bit.ly/xx">${esc(ctx.drafts.paste ?? '')}</textarea><span style="display:flex;gap:8px"><button class="vp-btn" style="flex:1;background:#eef0f4;color:#111318" data-act="x:guardian:paste-clip">📋 붙여넣기</button><button class="vp-btn" style="flex:1" data-act="x:guardian:check">AI로 검사하기</button></span></div></div>`,
+        html: `${phoneBar('붙여 넣어 검사')}<div class="vp-pad"><div class="vp-card"><b>받은 문자를 붙여 넣으세요</b><span style="font-size:.88em;color:#6b7280">메시지 앱에서 문자를 눌러 [복사]한 뒤, 아래 [붙여넣기]를 누르면 AI가 스미싱인지 판단해요.</span><textarea class="vp-field" rows="4" data-model="paste" placeholder="예: [OO은행] 계좌가 정지되었습니다 확인 bit.ly/xx">${esc(ctx.drafts.paste ?? '')}</textarea><span style="display:flex;gap:8px"><button class="vp-btn" style="flex:1;background:#eef0f4;color:#111318" data-act="x:guardian:paste-clip">📋 붙여넣기</button><button class="vp-btn" style="flex:1" data-act="x:guardian:check" ${aiBusy ? 'disabled' : ''}>${aiBusy ? 'AI가 판단하는 중…' : 'AI로 검사하기'}</button></span></div></div>`,
       };
     if (view === 'result') {
       const r = find(data);
@@ -732,10 +744,29 @@ export function createGuardianApp(opts: {
           return;
         case 'check': {
           const text = (ctx.drafts.paste ?? '').trim();
+          if (aiBusy) return;
           if (text.length < 2) return ctx.toast('검사할 문자를 넣어 주세요');
-          const r = add('OTHER', text, opts.analyzeMessage(text, personal()));
-          ctx.drafts.paste = '';
-          return ctx.push('result', r.key);
+          const local = () =>
+            add('OTHER', text, opts.analyzeMessage(text, personal()));
+          if (!email || !store.aiScan) {
+            ctx.drafts.paste = '';
+            return ctx.push('result', local().key);
+          }
+          // 외부 AI에게도 묻는다. 답이 없으면 기존 판정(규칙 + 학습 AI)으로 보여 준다.
+          aiBusy = true;
+          store
+            .aiScan(text)
+            .catch(() => null)
+            .then((ai) => {
+              const r = ai ? add('OTHER', text, ai.result, ai.id) : local();
+              ctx.drafts.paste = '';
+              ctx.push('result', r.key);
+            })
+            .finally(() => {
+              aiBusy = false;
+              ctx.refresh();
+            });
+          return;
         }
         case 'verdict': {
           const [key, v] = arg.split(':');
