@@ -105,3 +105,44 @@ body {
 html:has(.phone-stage) body {
   background: #eef1f6;
 }
+
+/* 휴대폰 화면(폭 480px 이하)에서는 가상 휴대폰의 테두리(베젤)·상태 표시줄을 없애고 화면 가득. PC는 그대로 */
+@media (max-width: 480px) {
+  .phone-stage {
+    max-width: none;
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    overflow: hidden;
+  }
+  .phone-stage .stage-bar {
+    border-width: 0 0 1px;
+    border-radius: 0;
+    padding: 6px 8px;
+  }
+  .phone-host {
+    min-height: 0;
+    height: 100%;
+  }
+  .phone-stage .vp {
+    max-width: none;
+    height: 100%;
+    aspect-ratio: auto;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .phone-stage .vp::before,
+  .phone-stage .vp::after,
+  .phone-stage .vp-cam-hole,
+  .phone-stage .vp-status {
+    display: none;
+  }
+  .phone-stage .vp-scr {
+    border-radius: 0;
+  }
+}

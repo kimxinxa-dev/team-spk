@@ -99,7 +99,7 @@ export function PhoneStage() {
       <div
         role="group"
         aria-label={qr ? 'QR 코드 받기' : '문자 받기'}
-        className="flex w-full items-center gap-1.5 rounded-xl border-2 border-line bg-white p-1.5"
+        className="stage-bar flex w-full items-center gap-1.5 rounded-xl border-2 border-line bg-white p-1.5"
       >
         <label htmlFor="stage-pick" className="sr-only">
           {qr ? '카메라에 비출 QR' : '받아 볼 문자'}
@@ -134,7 +134,10 @@ export function PhoneStage() {
           {qr ? 'QR 비추기' : '문자 받기'}
         </button>
       </div>
-      <div ref={hostRef} className="grid w-full justify-items-center" />
+      <div
+        ref={hostRef}
+        className="phone-host grid w-full justify-items-center"
+      />
     </main>
   );
 }
