@@ -4,6 +4,7 @@
 // 순서: 로그인 확인 → 입력 검증 → 내 자료인지(userId 조건) 확인. 화면이 보낸 채점 결과는 믿지 않고 서버에서 다시 채점한다.
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@/generated_prisma/client';
+import { explainMessage, getAiEnv } from '@/lib/ai/explain';
 import { getCurrentUser } from '@/lib/auth';
 import { signInCore, signOutCore, signUpCore } from '@/lib/auth-core';
 import { getDb } from '@/lib/db';
@@ -14,6 +15,7 @@ import {
   contactSchema,
   idSchema,
   messageScanSchema,
+  parseAiSummary,
   qrScanSchema,
   verdictSchema,
 } from '@/lib/validation';
@@ -25,6 +27,7 @@ import {
 import type { Analysis } from '@/lib/phone/engine';
 import type {
   AuthResult,
+  ExplainResult,
   GuardianContact,
   ScanSource,
   StoredScan,
@@ -64,6 +67,7 @@ export async function phoneListScans(): Promise<StoredScan[]> {
       r.userVerdict === 'SCAM' || r.userVerdict === 'SAFE'
         ? r.userVerdict
         : null,
+    ai: parseAiSummary(r.aiSummary),
   }));
 }
 
@@ -153,6 +157,78 @@ export async function phoneAiScan(
   } catch {
     console.error('[phoneAiScan] failed');
     return null;
+  }
+}
+
+/** 한 사람이 하루(24시간)에 받을 수 있는 Claude 설명 수 */
+const AI_DAILY_LIMIT = 20;
+
+/**
+ * 붙여 넣은 문자 기록에 Claude 설명을 붙인다. 이미 설명이 있으면 다시 부르지 않고 저장된 것을 돌려준다.
+ * 내 기록(userId 조건)·문자 기록만, 하루 횟수 제한, 응답 모양 검증 뒤 저장. 실패해도 앱 안 학습 AI 결과는 그대로 남는다.
+ */
+export async function phoneExplainScan(input: unknown): Promise<ExplainResult> {
+  const user = await getCurrentUser();
+  if (!user)
+    return { ok: false, message: '로그인하면 AI 설명을 볼 수 있어요.' };
+  const parsed = idSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: '잘못된 요청이에요.' };
+  if (!getAiEnv())
+    return { ok: false, message: 'AI 설명 기능이 아직 설정되지 않았어요.' };
+
+  try {
+    const db = getDb();
+    const scan = await db.scanRecord.findFirst({
+      where: { id: parsed.data.id, userId: user.id, kind: 'MESSAGE' },
+      select: {
+        content: true,
+        riskLevel: true,
+        score: true,
+        reasons: true,
+        aiSummary: true,
+      },
+    });
+    if (!scan) return { ok: false, message: '기록을 찾을 수 없어요.' };
+    const saved = parseAiSummary(scan.aiSummary);
+    if (saved) return { ok: true, explanation: saved };
+
+    const usedToday = await db.scanRecord.count({
+      where: {
+        userId: user.id,
+        aiSummary: { not: null },
+        updatedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    });
+    if (usedToday >= AI_DAILY_LIMIT)
+      return {
+        ok: false,
+        message: `AI 설명은 하루 ${AI_DAILY_LIMIT}번까지예요. 내일 다시 써 주세요.`,
+      };
+
+    const explanation = await explainMessage({
+      ...scan,
+      personal: await getPersonalExamples(user.id),
+    });
+    if (!explanation)
+      return {
+        ok: false,
+        message:
+          'AI 설명을 받지 못했어요. 위 판단 결과는 그대로 믿으셔도 돼요.',
+      };
+
+    // 설명이 비어 있을 때만 저장해 같은 기록에 두 번 저장하지 않는다.
+    await db.scanRecord.updateMany({
+      where: { id: parsed.data.id, userId: user.id, aiSummary: null },
+      data: { aiSummary: JSON.stringify(explanation) },
+    });
+    revalidateScanPages();
+    return { ok: true, explanation };
+  } catch {
+    console.error('[phoneExplainScan] failed');
+    return {
+      ok: false,
+      message: 'AI 설명을 받지 못했어요. 잠시 뒤 다시 시도해 주세요.',
+    };
   }
 }
 

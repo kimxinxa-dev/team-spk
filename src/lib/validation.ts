@@ -88,3 +88,25 @@ export const verdictSchema = z.object({
 export const demoScanSchema = z.object({
   sampleId: z.string().min(1).max(20),
 });
+
+// ---- 붙여 넣은 문자의 Claude 설명 ----
+
+/** Claude가 돌려준 설명. 이 모양이 맞을 때만 저장하고(aiSummary에 JSON 문자열), 화면도 이 모양으로 읽는다. */
+export const aiExplanationSchema = z.object({
+  summary: z.string().trim().min(1).max(100),
+  reasons: z.array(z.string().trim().min(1).max(150)).min(1).max(3),
+  actions: z.array(z.string().trim().min(1).max(150)).min(1).max(3),
+});
+
+export type AiExplanation = z.infer<typeof aiExplanationSchema>;
+
+/** 저장된 aiSummary(JSON 문자열)를 읽는다. 모양이 다르면 null. */
+export function parseAiSummary(raw: string | null): AiExplanation | null {
+  if (!raw) return null;
+  try {
+    const parsed = aiExplanationSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}

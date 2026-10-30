@@ -12,7 +12,12 @@ import {
 } from './engine';
 import { DEMO_QR_CODES } from '../../app/(app)/check/samples';
 import { demoQrSvg } from '../scan/demo-qr';
-import { authSchema, contactSchema, signUpSchema } from '../validation';
+import {
+  authSchema,
+  contactSchema,
+  signUpSchema,
+  type AiExplanation,
+} from '../validation';
 
 /** 검사 기록이 들어온 곳(서버의 source 값과 같다) */
 export type ScanSource = 'SMS' | 'KAKAO' | 'OTHER' | 'QR';
@@ -25,7 +30,13 @@ export type StoredScan = {
   content: string;
   result: Analysis;
   verdict: Verdict | null;
+  /** 붙여 넣은 문자에 붙인 Claude 설명 */
+  ai?: AiExplanation | null;
 };
+
+/** Claude 설명 요청 결과 */
+export type ExplainResult =
+  { ok: true; explanation: AiExplanation } | { ok: false; message: string };
 
 export type GuardianContact = {
   id: string;
@@ -69,6 +80,8 @@ export type GuardianStore = {
   ): Promise<{ id: string | null; result: Analysis } | null>;
   setVerdict(id: string, verdict: Verdict | null): Promise<boolean>;
   deleteScan(id: string): Promise<boolean>;
+  /** 붙여 넣은 문자 기록에 Claude 설명을 받는다(없으면 설명 없이 학습 AI 결과만) */
+  explainScan?(id: string): Promise<ExplainResult>;
   listContacts(): Promise<GuardianContact[]>;
   addContact(input: {
     name: string;
@@ -92,6 +105,11 @@ type Rec = {
   verdict: Verdict | null;
   /** QR 판독이 위험이라 그 주소를 막았는지 */
   blocked?: boolean;
+  /** Claude 설명: 받는 중 · 받음 · 실패(안내 문구) */
+  ai?:
+    | { state: 'loading' }
+    | { state: 'done'; explanation: AiExplanation }
+    | { state: 'failed'; message: string };
 };
 
 const SOURCE_LABEL: Record<ScanSource, string> = {
@@ -390,7 +408,43 @@ export function createGuardianApp(opts: {
     text: s.content,
     result: s.result,
     verdict: s.verdict,
+    ...(s.ai ? { ai: { state: 'done' as const, explanation: s.ai } } : {}),
   });
+
+  /** 붙여 넣은 문자를 저장한 뒤 Claude 설명을 받아 결과 화면에 붙인다. 실패해도 학습 AI 결과는 그대로 둔다. */
+  async function explain(ctx: PhoneAppContext, r: Rec) {
+    if (!store.explainScan || !email) return;
+    // 받는 중이거나 이미 받은 설명은 다시 부르지 않는다.
+    if (r.ai?.state === 'loading' || r.ai?.state === 'done') return;
+    r.ai = { state: 'loading' };
+    const id = await serverIdOf(r);
+    const res = id
+      ? await store
+          .explainScan(id)
+          .catch(() => ({ ok: false as const, message: '' }))
+      : { ok: false as const, message: '' };
+    r.ai = res.ok
+      ? { state: 'done', explanation: res.explanation }
+      : {
+          state: 'failed',
+          message:
+            res.message ||
+            'AI 설명을 받지 못했어요. 위 판단 결과는 그대로 믿으셔도 돼요.',
+        };
+    ctx.refresh();
+  }
+
+  function aiBox(r: Rec) {
+    if (!r.ai) return '';
+    if (r.ai.state === 'loading')
+      return `<div class="vp-card" role="status" style="background:#eff6ff;color:#1e3a8a">🤖 AI가 이유와 대처 방법을 정리하는 중이에요…</div>`;
+    if (r.ai.state === 'failed')
+      return `<div class="vp-card" role="alert" style="background:#f4f4f5;color:#3f3f46;font-size:.9em">${esc(r.ai.message)}</div>`;
+    const e = r.ai.explanation;
+    const list = (items: string[]) =>
+      `<ul style="margin:0;padding-left:16px;font-size:.9em">${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    return `<div class="vp-card" style="background:#eff6ff;color:#1e3a8a"><b>🤖 AI 설명 · ${esc(e.summary)}</b><span style="font-size:.85em;font-weight:700">왜 그렇게 봤나요?</span>${list(e.reasons)}<span style="font-size:.85em;font-weight:700">지금 이렇게 하세요</span>${list(e.actions)}</div>`;
+  }
 
   /** 로그인한 뒤: 로그인 전에 받은 문자 기록을 저장하고, 내 기록·연락처를 불러온다. */
   async function loadMine() {
@@ -434,7 +488,7 @@ export function createGuardianApp(opts: {
         .map((x) => `<li>${esc(x)}</li>`)
         .join('')}</ul>
       <span style="font-size:.85em;font-weight:700">실제로 사기였나요?</span>
-      <span class="vp-chips"><button class="vp-mini ${r.verdict === 'SCAM' ? 'on' : ''}" data-act="x:guardian:verdict" data-arg="${r.key}:SCAM">사기 맞아요</button><button class="vp-mini ${r.verdict === 'SAFE' ? 'on' : ''}" data-act="x:guardian:verdict" data-arg="${r.key}:SAFE">아니에요</button><button class="vp-mini" data-act="x:guardian:del" data-arg="${r.key}">지우기</button></span></div>`;
+      <span class="vp-chips"><button class="vp-mini ${r.verdict === 'SCAM' ? 'on' : ''}" data-act="x:guardian:verdict" data-arg="${r.key}:SCAM">사기 맞아요</button><button class="vp-mini ${r.verdict === 'SAFE' ? 'on' : ''}" data-act="x:guardian:verdict" data-arg="${r.key}:SAFE">아니에요</button><button class="vp-mini" data-act="x:guardian:del" data-arg="${r.key}">지우기</button></span>${!full && store.explainScan && r.source !== 'QR' && r.result.riskLevel !== 'SAFE' ? `<button class="vp-mini" style="justify-self:start" data-act="x:guardian:ai" data-arg="${r.key}">🤖 AI 설명 보기</button>` : ''}</div>`;
   }
 
   /** 아이콘이 든 입력칸 */
@@ -576,7 +630,7 @@ export function createGuardianApp(opts: {
     if (view === 'result') {
       const r = find(data);
       return {
-        html: `${phoneBar('검사 결과')}<div class="vp-pad">${r ? card(r, true) : '지운 기록이에요.'}</div>`,
+        html: `${phoneBar('검사 결과')}<div class="vp-pad">${r ? `${card(r, true)}${aiBox(r)}` : '지운 기록이에요.'}</div>`,
       };
     }
     if (view === 'qr')
@@ -767,6 +821,13 @@ export function createGuardianApp(opts: {
               ctx.refresh();
             });
           return;
+        }
+        case 'ai': {
+          // 실시간 감지 기록: 팝업은 학습 AI로 바로 띄우고, Claude 설명은 원할 때 받아 결과 화면에 붙인다.
+          const r = find(arg);
+          if (!r) return;
+          void explain(ctx, r);
+          return ctx.push('result', r.key);
         }
         case 'verdict': {
           const [key, v] = arg.split(':');

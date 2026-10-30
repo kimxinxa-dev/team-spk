@@ -9,7 +9,7 @@ import {
 import { FieldError, FormStatus, SubmitButton } from '@/components/form';
 import { RiskBadge } from '@/components/RiskBadge';
 import { INITIAL_RESULT } from '@/lib/action-result';
-import { MEMO_MAX } from '@/lib/validation';
+import { MEMO_MAX, parseAiSummary } from '@/lib/validation';
 import type { Risk } from '@/lib/scan/rules';
 
 export type ScanCardData = {
@@ -28,6 +28,7 @@ export type ScanCardData = {
 /** 검사 기록 한 건: 결과 보기 · 메모 고치기 · 지우기 */
 export function ScanCard({ scan }: { scan: ScanCardData }) {
   const [editing, setEditing] = useState(false);
+  const ai = parseAiSummary(scan.aiSummary);
   const [memoResult, memoAction] = useActionState(
     async (prev: typeof INITIAL_RESULT, formData: FormData) => {
       const result = await updateScanMemo(prev, formData);
@@ -72,10 +73,21 @@ export function ScanCard({ scan }: { scan: ScanCardData }) {
           ))}
         </ul>
       )}
-      {scan.aiSummary && (
-        <p className="mt-3 rounded-xl bg-blue-50 p-4 text-lg text-blue-950">
-          {scan.aiSummary}
-        </p>
+      {ai && (
+        <div className="mt-3 rounded-xl bg-blue-50 p-4 text-lg text-blue-950">
+          <p className="font-semibold">🤖 AI 설명 · {ai.summary}</p>
+          <ul className="mt-2 list-disc space-y-1 pl-6">
+            {ai.reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+          <p className="mt-2 font-semibold">지금 이렇게 하세요</p>
+          <ul className="mt-1 list-disc space-y-1 pl-6">
+            {ai.actions.map((action) => (
+              <li key={action}>{action}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* 사용자가 알려 준 정답은 이 사람의 다음 검사를 맞춤 판단하는 학습 데이터가 된다 */}
