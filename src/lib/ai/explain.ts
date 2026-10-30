@@ -41,6 +41,24 @@ const SYSTEM = `너는 어르신도 이해할 수 있게 스미싱(문자 사기
 반드시 아래 JSON 하나만 출력한다. 다른 글은 쓰지 않는다.
 {"summary":"한 줄 요약(40자 이내)","reasons":["이유 1~3개, 각 50자 이내"],"actions":["지금 할 일 1~3개, 각 50자 이내"]}`;
 
+/** 글자 수·항목 수가 조금 넘친 답은 버리지 않고 잘라서 맞춘다(모양 검증은 그 뒤에 한다). */
+function normalize(raw: unknown) {
+  if (typeof raw !== 'object' || raw === null) return raw;
+  const o = raw as Record<string, unknown>;
+  const cut = (v: unknown, max: number) =>
+    typeof v === 'string' ? v.trim().slice(0, max) : v;
+  const list = (v: unknown) =>
+    (Array.isArray(v) ? v : typeof v === 'string' ? [v] : [])
+      .filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+      .slice(0, 3)
+      .map((x) => x.trim().slice(0, 150));
+  return {
+    summary: cut(o.summary, 100),
+    reasons: list(o.reasons),
+    actions: list(o.actions),
+  };
+}
+
 export async function explainMessage(input: {
   content: string;
   riskLevel: Risk;
@@ -81,7 +99,7 @@ ${history || '- 아직 없음'}`;
         },
         body: JSON.stringify({
           model: MODEL,
-          max_tokens: 400,
+          max_tokens: 800,
           system: SYSTEM,
           messages: [{ role: 'user', content: prompt }],
         }),
@@ -98,9 +116,12 @@ ${history || '- 아직 없음'}`;
     };
     const text = body.content?.find((c) => c.type === 'text')?.text ?? '';
     const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
-    const parsed = aiExplanationSchema.safeParse(JSON.parse(json));
+    const parsed = aiExplanationSchema.safeParse(normalize(JSON.parse(json)));
     if (!parsed.success) {
-      console.error('[explainMessage] invalid response shape');
+      const issue = parsed.error.issues[0];
+      console.error(
+        `[explainMessage] invalid response shape: ${issue?.path.join('.')} ${issue?.code}`,
+      );
       return null;
     }
     return parsed.data;
